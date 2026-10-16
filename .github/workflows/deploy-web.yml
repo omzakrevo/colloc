@@ -1,0 +1,78 @@
+# Déploiement automatique de la version web (PWA, aussi utilisable sur téléphone) sur AWS S3 + CloudFront.
+# Déclenché à chaque push sur main (= à chaque mise à jour que je fais pour vous) ou manuellement.
+name: Deploy web (AWS)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # pour AWS OIDC (optionnel)
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - if: env.S3_BUCKET != ''
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - if: env.S3_BUCKET != ''
+        run: flutter pub get
+      - if: env.S3_BUCKET != ''
+        run: flutter analyze
+      - if: env.S3_BUCKET != ''
+        run: flutter test
+
+      - if: env.S3_BUCKET != ''
+        name: Build web
+        run: |
+          VERSION="$(date -u +%Y%m%d.%H%M)-${GITHUB_SHA::7}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          flutter build web --release --no-web-resources-cdn \
+            --dart-define=APP_VERSION="$VERSION" \
+            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+          echo "{\"colloc_version\":\"$VERSION\"}" > build/web/version.json
+
+      - if: env.S3_BUCKET != ''
+        name: AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ secrets.AWS_REGION || 'eu-west-3' }}
+          # Soit un rôle OIDC (recommandé) ...
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          # ... soit des clés d'accès (laisser vides si rôle OIDC)
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - if: env.S3_BUCKET != ''
+        name: Upload to S3
+        run: |
+          # fichiers versionnés par Flutter : cache long
+          aws s3 sync build/web "s3://$S3_BUCKET" --delete \
+            --exclude "index.html" --exclude "version.json" --exclude "flutter_service_worker.js" \
+            --exclude "flutter_bootstrap.js" --exclude "manifest.json" \
+            --cache-control "public,max-age=31536000,immutable"
+          # fichiers qui doivent toujours être revalidés (c'est ce qui déclenche la mise à jour)
+          for f in index.html version.json flutter_service_worker.js flutter_bootstrap.js manifest.json; do
+            aws s3 cp "build/web/$f" "s3://$S3_BUCKET/$f" --cache-control "no-cache,max-age=0,must-revalidate"
+          done
+
+      - if: env.S3_BUCKET != ''
+        name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+
+      - if: env.S3_BUCKET != ''
+        run: echo "Déployé ${VERSION}" >> "$GITHUB_STEP_SUMMARY"
