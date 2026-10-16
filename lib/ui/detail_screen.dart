@@ -21,6 +21,16 @@ class _DetailScreenState extends State<DetailScreen> {
   int _idx = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted)
+        AppScope.of(context)
+            .track('listing_view', listingId: widget.listing.id);
+    });
+  }
+
+  @override
   void dispose() {
     _page.dispose();
     super.dispose();
@@ -28,6 +38,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _contact() async {
     final s = AppScope.of(context);
+    s.track('contact_click', listingId: widget.listing.id);
     if (s.user == null) {
       final ok = await Navigator.of(context)
           .push<bool>(MaterialPageRoute(builder: (_) => const AuthScreen()));
@@ -194,11 +205,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                const Icon(
-                                  Icons.place,
-                                  size: 18,
-                                  color: kAccent,
-                                ),
+                                Icon(Icons.place, size: 18, color: kAccent),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
@@ -215,17 +222,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         l.kind == ListingKind.request ? 'Budget' : 'Prix',
                         Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(22),
-                            boxShadow: [
-                              BoxShadow(
-                                color: kc.withValues(alpha: .12),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
+                          decoration: cardDecoration(),
                           child: l.kind == ListingKind.request
                               ? Row(
                                   children: [
@@ -387,7 +384,7 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: kSurface,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: .08),
@@ -512,7 +509,7 @@ class _PendingBarState extends State<_PendingBar>
       children: [
         RotationTransition(
           turns: _c,
-          child: const Icon(Icons.hourglass_top_rounded, color: kAccent),
+          child: Icon(Icons.hourglass_top_rounded, color: kAccent),
         ),
         const SizedBox(width: 10),
         const Expanded(

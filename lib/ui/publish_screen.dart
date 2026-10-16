@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../cities.dart';
 import '../data/repository.dart';
 import '../models.dart';
 import '../state/app_state.dart';
@@ -201,28 +202,70 @@ class _PublishScreenState extends State<PublishScreen> {
                         validator: _req,
                       ),
                       const SizedBox(height: 12),
-                      Row(
+                      Text(
+                        'Ville',
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        runSpacing: 8,
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _city,
-                              decoration: const InputDecoration(
-                                labelText: 'Ville',
-                              ),
-                              validator: _req,
+                          for (final c in kCities)
+                            DesignChip(
+                              onHeader: false,
+                              label: c.name,
+                              selected: _city.text == c.name,
+                              onTap: () => setState(() {
+                                _city.text = c.name;
+                                _hood.clear();
+                              }),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _hood,
-                              decoration: const InputDecoration(
-                                labelText: 'Quartier',
-                              ),
-                            ),
-                          ),
                         ],
                       ),
+                      if (cityByName(_city.text)?.universities.isNotEmpty ??
+                          false)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            'Universités : ${cityByName(_city.text)!.universities.join(' · ')}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _city,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(
+                          labelText: 'Ville (ou autre ville)',
+                        ),
+                        validator: _req,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _hood,
+                        decoration: const InputDecoration(
+                          labelText: 'Quartier',
+                        ),
+                      ),
+                      if (cityByName(_city.text) != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Wrap(
+                            runSpacing: 8,
+                            children: [
+                              for (final n in cityByName(
+                                _city.text,
+                              )!.neighborhoods)
+                                DesignChip(
+                                  onHeader: false,
+                                  label: n,
+                                  selected: _hood.text == n,
+                                  onTap: () => setState(() => _hood.text = n),
+                                ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 12),
                       if (kind.hasHouse) ...[
                         _PhotoPicker(
@@ -461,7 +504,7 @@ class _PhotoPicker extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade400),
                     borderRadius: BorderRadius.circular(10),
-                    color: Colors.white,
+                    color: kSurface,
                   ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,

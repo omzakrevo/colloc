@@ -6,6 +6,7 @@ import '../models.dart';
 import '../state/app_state.dart';
 import '../util/format.dart';
 import 'detail_screen.dart';
+import 'design.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -58,7 +59,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    gradient: kLightGradient,
+                    gradient: LinearGradient(
+                      colors: D.s.headerColors.length > 1
+                          ? D.s.headerColors
+                          : [D.s.headerColors.first, D.s.headerColors.first],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: D.s.border > 0
+                        ? Border.all(color: D.s.borderColor, width: D.s.border)
+                        : null,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -70,8 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(18),
-                    textColor: kInk,
-                    iconColor: kBrand,
+                    textColor: D.s.headerInk,
+                    iconColor: D.s.headerInk,
                     leading: CircleAvatar(
                       radius: 28,
                       backgroundColor: kBrand,
@@ -97,7 +107,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         UserRole.admin => 'Administrateur',
                         _ => 'Étudiant',
                       }} · ${u.phone}',
-                      style: const TextStyle(color: Colors.black54),
+                      style: TextStyle(
+                        color: D.s.headerInk.withValues(alpha: .75),
+                      ),
                     ),
                     trailing: IconButton(
                       tooltip: 'Déconnexion',
@@ -108,6 +120,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           toast(context, 'Déconnecté');
                         }
                       },
+                    ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final c = TextEditingController(text: u.phone);
+                      final ok = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text(
+                            'Mon numéro (téléphone / WhatsApp)',
+                          ),
+                          content: TextField(
+                            controller: c,
+                            keyboardType: TextInputType.phone,
+                            decoration: const InputDecoration(
+                              hintText: '+226 70 00 00 00',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Annuler'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(100, 44),
+                              ),
+                              child: const Text('Enregistrer'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (ok == true && context.mounted) {
+                        try {
+                          await s.updatePhone(c.text.trim());
+                          if (context.mounted)
+                            toast(context, 'Numéro enregistré');
+                        } catch (e) {
+                          if (context.mounted) toast(context, e.toString());
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: Text(
+                      u.phone.isEmpty
+                          ? 'Ajouter mon numéro (obligatoire pour être contacté)'
+                          : 'Modifier mon numéro',
                     ),
                   ),
                 ),

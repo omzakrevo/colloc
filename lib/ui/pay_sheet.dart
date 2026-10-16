@@ -14,7 +14,7 @@ Future<void> showPaySheet(BuildContext context, Listing l) =>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: kSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -128,7 +128,7 @@ class _PaySheetState extends State<_PaySheet> {
           child: Container(
             width: 84,
             height: 84,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: kAccentGradient,
             ),
@@ -199,7 +199,7 @@ class _PaySheetState extends State<_PaySheet> {
                   decoration: BoxDecoration(
                     color: sel?.id == m.id
                         ? kBrand.withValues(alpha: .07)
-                        : Colors.white,
+                        : kSurface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: sel?.id == m.id ? kBrand : Colors.grey.shade300,

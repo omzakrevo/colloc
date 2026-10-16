@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../cities.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import 'auth_screen.dart';
+import 'design.dart';
 import 'detail_screen.dart';
 import 'logo.dart';
 import 'theme.dart';
@@ -23,94 +25,102 @@ class _FeedScreenState extends State<FeedScreen> {
     super.dispose();
   }
 
+  ListingFilter _f(
+    AppState s, {
+    Object? kind = _keep,
+    Object? city = _keep,
+    String? query,
+  }) {
+    final f = s.filter;
+    return ListingFilter(
+      kind: identical(kind, _keep) ? f.kind : kind as ListingKind?,
+      city: identical(city, _keep) ? f.city : city as String?,
+      query: query ?? f.query,
+      maxRent: f.maxRent,
+    );
+  }
+
+  static const _keep = Object();
+
   @override
   Widget build(BuildContext context) {
     final s = AppScope.of(context);
     final f = s.filter;
+    final d = D.s;
     final t = Theme.of(context).textTheme;
-
-    Widget pill(String label, IconData icon, ListingKind? k) {
-      final sel = f.kind == k;
-      return Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: GestureDetector(
-          onTap: () => s.setFilter(
-            ListingFilter(kind: k, query: f.query, maxRent: f.maxRent),
-          ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: sel ? kBrand : Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: sel ? kBrand : Colors.grey.shade300),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 16, color: sel ? Colors.white : kBrand),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: sel ? Colors.white : kInk,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    final center = d.headerStyle == HeaderStyle.warm;
+    final ink = d.headerInk;
 
     final header = GradientHeader(
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: center
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: center
+                    ? MainAxisAlignment.center
+                    : MainAxisAlignment.start,
                 children: [
                   const ColocLogo(size: 40),
                   const SizedBox(width: 10),
-                  const Text(
+                  Text(
                     'Colloc',
                     style: TextStyle(
-                      color: kInk,
+                      color: ink,
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: .3,
                     ),
                   ),
-                  const Spacer(),
-                  if (s.user == null)
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  if (!center) ...[
+                    const Spacer(),
+                    if (s.user == null)
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        ),
+                        icon: const Icon(Icons.login, size: 18),
+                        label: const Text('Connexion'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: ink,
+                          side: BorderSide(
+                            color: ink.withValues(alpha: .6),
+                            width: d.id == DesignId.pop ? 2.5 : 1,
+                          ),
+                          shape:
+                              d.id == DesignId.minimal || d.id == DesignId.pop
+                              ? RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                )
+                              : const StadiumBorder(),
+                        ),
+                      )
+                    else
+                      Text(
+                        'Salut, ${s.user!.displayName.split(' ').first}',
+                        style: TextStyle(
+                          color: ink,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      icon: const Icon(Icons.login, size: 18),
-                      label: const Text('Connexion'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: kBrand,
-                        side: const BorderSide(color: kBrand),
-                        shape: const StadiumBorder(),
-                      ),
-                    )
-                  else
-                    Text(
-                      'Salut, ${s.user!.displayName.split(' ').first}',
-                      style: const TextStyle(
-                        color: kInk,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                  ],
                 ],
               ),
-              const SizedBox(height: 18),
+              if (center && s.user == null)
+                TextButton(
+                  onPressed: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => const AuthScreen())),
+                  child: Text(
+                    'Connexion',
+                    style: TextStyle(color: ink, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              SizedBox(height: center ? 8 : 18),
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 700),
@@ -122,11 +132,12 @@ class _FeedScreenState extends State<FeedScreen> {
                     child: child,
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Trouve ta coloc,\nsans prise de tête.',
+                  textAlign: center ? TextAlign.center : TextAlign.start,
                   style: TextStyle(
-                    color: kInk,
-                    fontSize: 28,
+                    color: ink,
+                    fontSize: d.id == DesignId.minimal ? 26 : 28,
                     fontWeight: FontWeight.w900,
                     height: 1.1,
                   ),
@@ -135,48 +146,46 @@ class _FeedScreenState extends State<FeedScreen> {
               const SizedBox(height: 16),
               Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: .18),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(
+                    d.id == DesignId.pop
+                        ? 10
+                        : (d.id == DesignId.minimal ? 6 : 18),
+                  ),
+                  boxShadow: d.offsetShadow
+                      ? [
+                          BoxShadow(
+                            color: d.ink,
+                            offset: const Offset(4, 4),
+                            blurRadius: 0,
+                          ),
+                        ]
+                      : d.id == DesignId.minimal
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: .18),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                 ),
                 child: TextField(
                   controller: _search,
                   textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     hintText: 'Ville, quartier, mot-clé…',
-                    prefixIcon: const Icon(Icons.search, color: kBrand),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide.none,
-                    ),
+                    prefixIcon: Icon(Icons.search, color: kBrand),
                     suffixIcon: f.query.isEmpty
                         ? null
                         : IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _search.clear();
-                              s.setFilter(
-                                ListingFilter(kind: f.kind, maxRent: f.maxRent),
-                              );
+                              s.setFilter(_f(s, query: ''));
                             },
                           ),
                   ),
-                  onSubmitted: (v) => s.setFilter(
-                    ListingFilter(kind: f.kind, query: v, maxRent: f.maxRent),
-                  ),
+                  onSubmitted: (v) => s.setFilter(_f(s, query: v)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -184,22 +193,51 @@ class _FeedScreenState extends State<FeedScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    pill('Tout', Icons.grid_view_rounded, null),
-                    pill(
-                      'Colocations',
-                      Icons.home_work_outlined,
-                      ListingKind.offer,
+                    DesignChip(
+                      label: 'Tout',
+                      icon: Icons.grid_view_rounded,
+                      selected: f.kind == null,
+                      onTap: () => s.setFilter(_f(s, kind: null)),
                     ),
-                    pill(
-                      'Demandes',
-                      Icons.person_search_outlined,
-                      ListingKind.request,
+                    DesignChip(
+                      label: 'Colocations',
+                      icon: Icons.home_work_outlined,
+                      selected: f.kind == ListingKind.offer,
+                      onTap: () => s.setFilter(_f(s, kind: ListingKind.offer)),
                     ),
-                    pill(
-                      'Agences',
-                      Icons.apartment_outlined,
-                      ListingKind.agency,
+                    DesignChip(
+                      label: 'Demandes',
+                      icon: Icons.person_search_outlined,
+                      selected: f.kind == ListingKind.request,
+                      onTap: () =>
+                          s.setFilter(_f(s, kind: ListingKind.request)),
                     ),
+                    DesignChip(
+                      label: 'Agences',
+                      icon: Icons.apartment_outlined,
+                      selected: f.kind == ListingKind.agency,
+                      onTap: () => s.setFilter(_f(s, kind: ListingKind.agency)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 4),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    DesignChip(
+                      label: 'Toutes les villes',
+                      icon: Icons.place_outlined,
+                      selected: f.city == null,
+                      onTap: () => s.setFilter(_f(s, city: null)),
+                    ),
+                    for (final c in kCities)
+                      DesignChip(
+                        label: c.name,
+                        selected: f.city == c.name,
+                        onTap: () => s.setFilter(_f(s, city: c.name)),
+                      ),
                   ],
                 ),
               ),
@@ -209,7 +247,7 @@ class _FeedScreenState extends State<FeedScreen> {
       ),
     );
 
-    Widget center(Widget w) => Center(
+    Widget wrap(Widget w) => Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 900),
         child: w,
@@ -228,40 +266,33 @@ class _FeedScreenState extends State<FeedScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(top: 18),
-                child: center(PromoCarousel(promos: s.promos)),
+                child: wrap(
+                  PromoCarousel(
+                    key: ValueKey(
+                      s.promos
+                          .map((p) => '${p.id}${p.title}${p.sort}${p.hasImage}')
+                          .join(),
+                    ),
+                    promos: s.promos,
+                  ),
+                ),
               ),
             ),
           SliverToBoxAdapter(
-            child: center(
+            child: wrap(
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        gradient: kAccentGradient,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'À la une',
-                      style: t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (!s.loading)
-                      Text(
-                        '${s.listings.length} annonce${s.listings.length > 1 ? 's' : ''}',
-                        style: t.bodySmall?.copyWith(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
+                child: SectionTitle(
+                  'À la une',
+                  trailing: s.loading
+                      ? null
+                      : Text(
+                          '${s.listings.length} annonce${s.listings.length > 1 ? 's' : ''}',
+                          style: t.bodySmall?.copyWith(
+                            color: d.muted,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                  ],
                 ),
               ),
             ),
@@ -270,12 +301,7 @@ class _FeedScreenState extends State<FeedScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
               sliver: SliverGrid.builder(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 430,
-                  mainAxisExtent: 300,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
+                gridDelegate: ListingCard.gridDelegate(),
                 itemCount: 4,
                 itemBuilder: (_, _) => const SkeletonCard(),
               ),
@@ -314,7 +340,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Aucune annonce pour le moment.\nSoyez le premier à publier !',
+                          'Aucune annonce pour ce filtre.\nSoyez le premier à publier !',
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -331,13 +357,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 return SliverPadding(
                   padding: EdgeInsets.fromLTRB(pad, 0, pad, 28),
                   sliver: SliverGrid.builder(
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 430,
-                          mainAxisExtent: 300,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
+                    gridDelegate: ListingCard.gridDelegate(),
                     itemCount: s.listings.length,
                     itemBuilder: (_, i) => FadeSlideIn(
                       key: ValueKey(s.listings[i].id),
@@ -356,7 +376,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 );
               },
             ),
-          SliverToBoxAdapter(child: center(const _HowItWorks())),
+          SliverToBoxAdapter(child: wrap(const _HowItWorks())),
         ],
       ),
     );
@@ -368,11 +388,11 @@ class _HowItWorks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    const steps = [
+    final steps = [
       (
         Icons.search_rounded,
         'Trouve',
-        "Parcours les maisons et les demandes, filtre par ville ou quartier.",
+        'Parcours les maisons et les demandes, filtre par ville ou quartier.',
         kBrand,
       ),
       (
@@ -393,56 +413,33 @@ class _HowItWorks extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 5,
-                height: 22,
-                decoration: BoxDecoration(
-                  gradient: kAccentGradient,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Comment ça marche',
-                style: t.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-              ),
-            ],
-          ),
+          const SectionTitle('Comment ça marche'),
           const SizedBox(height: 14),
           for (var i = 0; i < steps.length; i++)
             FadeSlideIn(
               index: i,
               child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
+                margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: steps[i].$4.withValues(alpha: .10),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
+                decoration: cardDecoration(radius: D.s.radius.clamp(6, 20)),
                 child: Row(
                   children: [
                     Container(
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            steps[i].$4,
-                            Color.lerp(steps[i].$4, Colors.white, .35)!,
-                          ],
-                        ),
+                        shape: D.s.id == DesignId.minimal
+                            ? BoxShape.rectangle
+                            : BoxShape.circle,
+                        borderRadius: D.s.id == DesignId.minimal
+                            ? BorderRadius.circular(6)
+                            : null,
+                        color: steps[i].$4,
+                        border: D.s.id == DesignId.pop
+                            ? Border.all(color: D.s.ink, width: 2.5)
+                            : null,
                       ),
-                      child: Icon(steps[i].$1, color: Colors.white),
+                      child: Icon(steps[i].$1, color: onColor(steps[i].$4)),
                     ),
                     const SizedBox(width: 14),
                     Expanded(

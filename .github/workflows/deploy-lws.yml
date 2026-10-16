@@ -1,0 +1,72 @@
+name: Deploy web (LWS)
+
+# Déploie le site sur l'hébergement LWS, sous-domaine coloc.telimatchi.com, par SFTP (comme Telima).
+# S'exécute à chaque push sur main (= chaque mise à jour) ou à la main : Actions > "Deploy web (LWS)" > Run workflow.
+# Tant que les secrets LWS ne sont pas créés dans ce dépôt (Settings > Secrets and variables > Actions), le workflow ne fait rien.
+#   Secrets : LWS_HOST, LWS_USER, LWS_PASS, LWS_DIR (dossier du sous-domaine), LWS_PORT (facultatif),
+#             SUPABASE_URL, SUPABASE_ANON_KEY
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      htaccess:
+        description: "Envoyer aussi le .htaccess (cache, réécriture ; sauvegarde l'ancien en .htaccess.bak)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-lws
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      LWS_HOST: ${{ secrets.LWS_HOST }}
+      LWS_USER: ${{ secrets.LWS_USER }}
+      LWS_PASS: ${{ secrets.LWS_PASS }}
+      LWS_DIR: ${{ secrets.LWS_DIR }}
+      LWS_PORT: ${{ secrets.LWS_PORT }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secrets LWS présents ?
+        id: gate
+        run: |
+          if [ -n "$LWS_HOST" ] && [ -n "$LWS_USER" ] && [ -n "$LWS_PASS" ] && [ -n "$LWS_DIR" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "Secrets LWS absents : déploiement ignoré (voir docs/DEPLOIEMENT.md)."; fi
+      - if: steps.gate.outputs.go == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - if: steps.gate.outputs.go == 'true'
+        run: flutter pub get
+      - if: steps.gate.outputs.go == 'true'
+        run: flutter analyze && flutter test
+      - name: Compiler le site
+        if: steps.gate.outputs.go == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          VERSION="$(date -u +%Y%m%d.%H%M)-${GITHUB_SHA::7}"
+          python3 - <<'EOF'
+          import json, os
+          from urllib.parse import urlparse
+          # L'adresse Supabase doit être « https://<projet>.supabase.co » sans chemin (on retire /rest/v1/ copié par erreur)
+          raw = os.environ.get("SUPABASE_URL", "").strip()
+          u = urlparse(raw)
+          url = f"{u.scheme}://{u.netloc}" if u.scheme and u.netloc else raw
+          json.dump({"SUPABASE_URL": url, "SUPABASE_ANON_KEY": os.environ.get("SUPABASE_ANON_KEY", "").strip()}, open("env.json", "w"))
+          print("URL Supabase :", len(url), "caractères ; clé :", len(os.environ.get("SUPABASE_ANON_KEY", "").strip()), "caractères")
+          EOF
+          flutter build web --release --no-web-resources-cdn --dart-define-from-file=env.json --dart-define=APP_VERSION="$VERSION"
+          echo "{\"colloc_version\":\"$VERSION\"}" > build/web/version.json
+          rm -f env.json
+      - name: Envoyer sur LWS (SFTP)
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          pip install paramiko
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.htaccess }}" = "true" ]; then EXTRA="--htaccess"; else EXTRA=""; fi
+          python scripts/deploy_lws.py --yes $EXTRA

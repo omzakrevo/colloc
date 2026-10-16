@@ -1,4 +1,5 @@
 import '../models.dart';
+import '../ui/design.dart' show ThemeSettings;
 
 class AppException implements Exception {
   AppException(this.message);
@@ -25,7 +26,27 @@ abstract class Repository {
   Future<void> signOut();
 
   Future<List<Listing>> listings(ListingFilter filter);
+
+  /// Flyers actifs du slider d'accueil.
   Future<List<Promo>> promos();
+
+  /// Administrateur : tous les flyers (actifs ou non).
+  Future<List<Promo>> allPromos();
+  Future<void> savePromo(PromoDraft draft);
+  Future<void> deletePromo(String id);
+
+  /// Design choisi par l'administrateur (visible par tous les visiteurs).
+  Future<ThemeSettings> themeSettings();
+  Future<void> saveTheme(ThemeSettings settings);
+
+  /// Enregistre une action du visiteur (statistiques). Ne doit jamais lever d'erreur bloquante.
+  Future<void> track(AnalyticsEvent event);
+
+  /// Administrateur : statistiques de fréquentation sur [days] jours.
+  Future<Stats> adminStats(int days);
+
+  /// Met à jour le téléphone du profil courant.
+  Future<void> updatePhone(String phone);
 
   Future<List<Listing>> myListings();
   Future<Listing> createListing(ListingDraft draft);

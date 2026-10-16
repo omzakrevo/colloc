@@ -5,6 +5,8 @@ Application **Flutter** (web/PWA + Android + iOS) pour aider les étudiants à t
 - **Étudiant avec une maison** → publie une offre de colocation (photos, état, loyer, caution, frais, conditions).
 - **Étudiant sans maison** → publie une demande de colocation (budget, quartier, durée…).
 - **Agence immobilière** → publie des logements disponibles (photos, état, caution, frais de prestation, conditions).
+- **Villes** : Ouagadougou, Bobo-Dioulasso, Banfora, Koudougou, Ouahigouya… (filtre par ville, quartiers, universités).
+- **Espace administrateur** : validation des paiements, statistiques de fréquentation, gestion des flyers (cliquables), et choix parmi **5 designs** (+ couleurs) appliqué à tout le site.
 - **Mise en contact : 1 000 FCFA** par annonce contactée. Paiement manuel : l'utilisateur envoie les 1 000 FCFA en Mobile Money, émet un avis de paiement, et
   **l'administrateur valide** ; le numéro de l'annonceur n'est révélé qu'après validation.
 
@@ -32,9 +34,9 @@ lib/
   data/supabase_repository.dart  # production (Auth + Postgres + Storage)
   state/app_state.dart     # état global (ChangeNotifier)
   ui/                      # écrans : annonces, détail, publication, profil, connexion, paiement
-supabase/schema.sql              # tables, RLS, bucket photos
-infra/web-hosting.yml            # CloudFormation : S3 + CloudFront + rôle GitHub OIDC
-.github/workflows/               # ci, deploy-web (AWS), demo-pages, android
+supabase/migrations/            # migration Supabase (tables coloc_*, RLS, fonctions, stockage)
+scripts/deploy_lws.py             # envoi SFTP vers LWS (coloc.telimatchi.com)
+.github/workflows/               # ci, deploy-lws, demo-pages, android
 ```
 
 Déploiement, mises à jour automatiques et configuration du paiement : **`docs/DEPLOIEMENT.md`**.

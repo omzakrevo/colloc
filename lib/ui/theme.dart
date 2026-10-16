@@ -2,107 +2,126 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 import '../models.dart';
+import 'design.dart';
 
-const kBrandDark = Color(0xFF0B5E57);
-const kBrand = Color(0xFF0F766E);
-const kBrandLight = Color(0xFF14B8A6);
-const kAccent = Color(0xFFF97316);
-const kIndigo = Color(0xFF4338CA);
-const kInk = Color(0xFF0F1F1D);
-const kBg = Color(0xFFF7FBFA);
+// Les couleurs de l'app viennent du design courant (voir design.dart) : ces accesseurs remplacent les anciennes constantes.
+Color get kBrandDark => D.s.primaryDark;
+Color get kBrand => D.s.primary;
+Color get kBrandLight => D.s.primaryLight;
+Color get kAccent => D.s.accent;
+Color get kIndigo => D.s.tertiary;
+Color get kInk => D.s.ink;
+Color get kBg => D.s.bg;
+Color get kSurface => D.s.surface;
 
-const kBrandGradient = LinearGradient(
+LinearGradient _g(List<Color> c) => LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
-  colors: [kBrandDark, kBrand],
+  colors: c,
 );
-const kAccentGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [Color(0xFFC2410C), Color(0xFFEA580C)],
+LinearGradient get kBrandGradient => _g(
+  D.s.buttonColors.length == 1
+      ? [D.s.buttonColors[0], D.s.buttonColors[0]]
+      : D.s.buttonColors,
 );
-
-/// En-tête clair : le texte foncé (kInk) y reste très lisible.
-const kLightGradient = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [Color(0xFFF0FBF8), Color(0xFFD5F2EA)],
+LinearGradient get kAccentGradient => _g(
+  D.s.accentButtonColors.length == 1
+      ? [D.s.accentButtonColors[0], D.s.accentButtonColors[0]]
+      : D.s.accentButtonColors,
 );
 
-ThemeData buildTheme() {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: kBrand,
-    brightness: Brightness.light,
-  ).copyWith(primary: kBrand, secondary: kAccent, tertiary: kIndigo);
+ThemeData buildTheme(DesignSpec d) {
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: d.primary,
+        brightness: d.dark ? Brightness.dark : Brightness.light,
+      ).copyWith(
+        primary: d.primary,
+        secondary: d.accent,
+        tertiary: d.tertiary,
+        surface: d.surface,
+        onSurface: d.ink,
+      );
+  final shape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(d.radius),
+    side: d.border > 0
+        ? BorderSide(color: d.borderColor, width: d.border)
+        : BorderSide.none,
+  );
+  OutlineInputBorder ob(Color c, [double w = 1]) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(d.radius.clamp(6, 16)),
+    borderSide: BorderSide(color: c, width: w),
+  );
+  final line = d.dark
+      ? Colors.white24
+      : (d.id == DesignId.pop ? d.ink : Colors.grey.shade300);
   return ThemeData(
     useMaterial3: true,
+    brightness: d.dark ? Brightness.dark : Brightness.light,
     colorScheme: scheme,
-    scaffoldBackgroundColor: kBg,
-    textTheme: Typography.blackMountainView.apply(
-      bodyColor: kInk,
-      displayColor: kInk,
-    ),
-    appBarTheme: const AppBarTheme(
+    scaffoldBackgroundColor: d.bg,
+    canvasColor: d.surface,
+    textTheme:
+        (d.dark ? Typography.whiteMountainView : Typography.blackMountainView)
+            .apply(bodyColor: d.ink, displayColor: d.ink),
+    appBarTheme: AppBarTheme(
       centerTitle: false,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      foregroundColor: kInk,
+      foregroundColor: d.ink,
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: Colors.white,
+      color: d.surface,
       margin: EdgeInsets.zero,
-      shadowColor: kBrand.withValues(alpha: .25),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      shape: shape,
     ),
+    dividerColor: d.dark ? Colors.white12 : null,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: kBrand, width: 2),
-      ),
+      fillColor: d.surface,
+      border: ob(line, d.id == DesignId.pop ? 2.5 : 1),
+      enabledBorder: ob(line, d.id == DesignId.pop ? 2.5 : 1),
+      focusedBorder: ob(d.primary, 2),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: kBrand,
+        backgroundColor: d.primary,
+        foregroundColor: onColor(d.primary),
         minimumSize: const Size.fromHeight(54),
         textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(d.radius.clamp(6, 16)),
+        ),
       ),
     ),
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      selectedColor: kBrand.withValues(alpha: .15),
-      side: BorderSide(color: Colors.grey.shade300),
+      selectedColor: d.primary.withValues(alpha: .15),
+      side: BorderSide(color: line),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: Colors.white,
-      indicatorColor: kBrand.withValues(alpha: .14),
+      backgroundColor: d.id == DesignId.pop
+          ? const Color(0xFFFFD43B)
+          : d.surface,
+      indicatorColor: d.id == DesignId.pop
+          ? d.ink
+          : d.primary.withValues(alpha: .16),
+      surfaceTintColor: Colors.transparent,
       labelTextStyle: WidgetStateProperty.resolveWith(
         (s) => TextStyle(
           fontSize: 12,
           fontWeight: s.contains(WidgetState.selected)
-              ? FontWeight.w700
+              ? FontWeight.w800
               : FontWeight.w500,
-          color: s.contains(WidgetState.selected)
-              ? kBrand
-              : Colors.grey.shade700,
+          color: d.ink,
         ),
       ),
       iconTheme: WidgetStateProperty.resolveWith(
         (s) => IconThemeData(
           color: s.contains(WidgetState.selected)
-              ? kBrand
-              : Colors.grey.shade600,
+              ? (d.id == DesignId.pop ? Colors.white : d.primary)
+              : d.ink.withValues(alpha: .6),
         ),
       ),
     ),
@@ -120,7 +139,7 @@ ThemeData buildTheme() {
 
 Color kindColor(ListingKind k) => switch (k) {
   ListingKind.offer => kBrand,
-  ListingKind.request => const Color(0xFFEA580C),
+  ListingKind.request => kAccent,
   ListingKind.agency => kIndigo,
 };
 

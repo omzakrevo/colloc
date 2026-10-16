@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import '../data/repository.dart';
 import '../models.dart';
+import '../ui/design.dart';
 import '../util/update_check.dart';
 
 class AppState extends ChangeNotifier {
@@ -25,7 +28,96 @@ class AppState extends ChangeNotifier {
   Timer? _updateTimer;
   Timer? _pollTimer;
 
+  // onglets (conservés quand le design change et que l'interface est reconstruite)
+  String shellTab = 'feed';
+  int adminTab = 0;
+
+  // (permet à l'UI de demander un rafraîchissement après un simple changement d'onglet)
+  void notifyListeners_() => notifyListeners();
+
+  // design choisi par l'admin
+  ThemeSettings theme = const ThemeSettings();
+  int themeVersion = 0;
+
+  // statistiques (anonymes)
+  String _visitorId = '';
+  final String _sessionId = _rand(12);
+  String device = 'mobile';
+
+  static String _rand(int n) {
+    final r = Random.secure();
+    return List.generate(n, (_) => r.nextInt(16).toRadixString(16)).join();
+  }
+
+  Future<void> initAnalytics() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      _visitorId = p.getString('coloc_vid') ?? '';
+      if (_visitorId.isEmpty) {
+        _visitorId = _rand(20);
+        await p.setString('coloc_vid', _visitorId);
+      }
+    } catch (_) {
+      _visitorId = _rand(20);
+    }
+  }
+
+  /// Enregistre une action du visiteur. N'enregistre pas l'activité de l'administrateur.
+  void track(
+    String type, {
+    String? screen,
+    String? listingId,
+    String? promoId,
+    String? query,
+    String? city,
+  }) {
+    if (user?.isAdmin == true) return;
+    if (_visitorId.isEmpty) _visitorId = _rand(20);
+    unawaited(
+      repo
+          .track(
+            AnalyticsEvent(
+              visitorId: _visitorId,
+              sessionId: _sessionId,
+              type: type,
+              screen: screen,
+              listingId: listingId,
+              promoId: promoId,
+              query: query,
+              city: city,
+              device: device,
+            ),
+          )
+          .catchError((Object _) {}),
+    );
+  }
+
+  // ───────── design ─────────
+
+  void applyTheme(ThemeSettings t) {
+    theme = t;
+    D.s = buildDesign(t);
+    themeVersion++;
+    notifyListeners();
+  }
+
+  Future<void> loadTheme() async {
+    try {
+      applyTheme(
+        await repo.themeSettings().timeout(const Duration(seconds: 3)),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> saveTheme(ThemeSettings t) async {
+    await repo.saveTheme(t);
+    applyTheme(t);
+  }
+
+  // ───────── démarrage ─────────
+
   Future<void> start() async {
+    await initAnalytics();
     user = await repo.currentUser();
     await Future.wait([
       refresh(),
@@ -70,6 +162,10 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> setFilter(ListingFilter f) {
+    if (f.query.trim().isNotEmpty && f.query != filter.query)
+      track('search', query: f.query.trim());
+    if (f.city != null && f.city != filter.city)
+      track('filter_city', city: f.city);
     filter = f;
     return refresh();
   }
@@ -99,7 +195,7 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
     _pollTimer?.cancel();
     if (user != null &&
-        (payments.any((p) => p.status == PaymentStatus.pending))) {
+        payments.any((p) => p.status == PaymentStatus.pending)) {
       _pollTimer = Timer(const Duration(seconds: 20), loadAccount);
     }
     notifyListeners();
@@ -129,8 +225,11 @@ class AppState extends ChangeNotifier {
     return null;
   }
 
+  // ───────── compte ─────────
+
   Future<void> signIn(String email, String password) async {
     user = await repo.signIn(email: email, password: password);
+    track('login');
     await loadAccount();
     notifyListeners();
   }
@@ -151,6 +250,7 @@ class AppState extends ChangeNotifier {
       role: role,
       agencyName: agencyName,
     );
+    track('signup');
     await loadAccount();
     notifyListeners();
   }
@@ -162,6 +262,20 @@ class AppState extends ChangeNotifier {
     payments = const [];
     adminPayments = const [];
     _pollTimer?.cancel();
+    notifyListeners();
+  }
+
+  Future<void> updatePhone(String phone) async {
+    await repo.updatePhone(phone);
+    final u = user;
+    if (u != null)
+      user = AppUser(
+        id: u.id,
+        name: u.name,
+        phone: phone,
+        role: u.role,
+        agencyName: u.agencyName,
+      );
     notifyListeners();
   }
 
@@ -182,12 +296,25 @@ class AppState extends ChangeNotifier {
       payerPhone: payerPhone,
       reference: reference,
     );
+    track('payment_notice', listingId: listingId);
     await loadAccount();
   }
 
   Future<void> review(String id, {required bool approve}) async {
     await repo.reviewPayment(id, approve: approve);
     await loadAccount();
+  }
+
+  // ───────── admin : flyers ─────────
+
+  Future<void> savePromo(PromoDraft d) async {
+    await repo.savePromo(d);
+    await loadPromos();
+  }
+
+  Future<void> deletePromo(String id) async {
+    await repo.deletePromo(id);
+    await loadPromos();
   }
 }
 
