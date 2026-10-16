@@ -180,3 +180,24 @@ class ListingFilter {
   final String query;
   final int? maxRent;
 }
+
+/// Bandeau du slider de l'accueil : pub, annonce de l'app, partenaire…
+/// Géré côté serveur (table `promos`) : ajouter/retirer une pub ne demande aucune mise à jour de l'app.
+class Promo {
+  const Promo({
+    required this.id,
+    required this.title,
+    this.subtitle = '',
+    this.imageUrl,
+    this.linkUrl,
+    this.colorA = 0xFF0F766E,
+    this.colorB = 0xFF14B8A6,
+    this.sponsor = false,
+  });
+  final String id, title, subtitle;
+  final String? imageUrl, linkUrl;
+  final int colorA, colorB;
+
+  /// Affiche la mention « Publicité ».
+  final bool sponsor;
+}

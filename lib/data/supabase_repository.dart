@@ -123,6 +123,34 @@ class SupabaseRepository implements Repository {
   }
 
   @override
+  Future<List<Promo>> promos() async {
+    final rows = await _db
+        .from('promos')
+        .select()
+        .eq('active', true)
+        .order('sort');
+    return rows
+        .map<Promo>(
+          (r) => Promo(
+            id: r['id'] as String,
+            title: r['title'] as String,
+            subtitle: (r['subtitle'] as String?) ?? '',
+            imageUrl: r['image_url'] as String?,
+            linkUrl: r['link_url'] as String?,
+            colorA: _hex(r['color_a'] as String?, 0xFF0F766E),
+            colorB: _hex(r['color_b'] as String?, 0xFF14B8A6),
+            sponsor: r['sponsor'] as bool? ?? false,
+          ),
+        )
+        .toList();
+  }
+
+  static int _hex(String? h, int fallback) {
+    final v = int.tryParse((h ?? '').replaceAll('#', ''), radix: 16);
+    return v == null ? fallback : (0xFF000000 | v);
+  }
+
+  @override
   Future<List<Listing>> myListings() async {
     final uid = _db.auth.currentUser!.id;
     final rows = await _db

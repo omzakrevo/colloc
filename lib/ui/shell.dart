@@ -6,6 +6,7 @@ import '../util/update_check.dart';
 import 'auth_screen.dart';
 import 'feed_screen.dart';
 import 'profile_screen.dart';
+import 'theme.dart';
 import 'publish_screen.dart';
 
 class Shell extends StatefulWidget {
@@ -43,7 +44,7 @@ class _ShellState extends State<Shell> {
         children: [
           if (AppConfig.isDemo)
             Material(
-              color: Colors.amber.shade100,
+              color: const Color(0xFFFEF3C7),
               child: const SafeArea(
                 bottom: false,
                 child: Padding(
@@ -58,7 +59,7 @@ class _ShellState extends State<Shell> {
             ),
           if (s.updateAvailable)
             Material(
-              color: Theme.of(context).colorScheme.primary,
+              color: kBrand,
               child: SafeArea(
                 bottom: false,
                 child: ListTile(
@@ -92,7 +93,7 @@ class _ShellState extends State<Shell> {
           NavigationDestination(icon: Icon(Icons.search), label: 'Annonces'),
           NavigationDestination(
             icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
+            selectedIcon: Icon(Icons.add_circle, color: kAccent),
             label: 'Publier',
           ),
           NavigationDestination(

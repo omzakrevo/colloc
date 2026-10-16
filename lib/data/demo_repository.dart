@@ -183,6 +183,32 @@ class DemoRepository implements Repository {
   }
 
   @override
+  Future<List<Promo>> promos() async => const [
+    Promo(
+      id: 'p1',
+      title: 'Ta coloc, sans prise de tête',
+      subtitle: 'Trouve une maison ou des colocataires en quelques minutes.',
+      colorA: 0xFF0F766E,
+      colorB: 0xFF2DD4BF,
+    ),
+    Promo(
+      id: 'p2',
+      title: 'Agences : publiez vos logements',
+      subtitle: 'Photos, caution, frais : touchez des milliers d\'étudiants.',
+      colorA: 0xFF4338CA,
+      colorB: 0xFF818CF8,
+    ),
+    Promo(
+      id: 'p3',
+      title: 'Votre publicité ici',
+      subtitle: 'Boutiques, déménageurs, internet… parlez aux étudiants.',
+      colorA: 0xFFEA580C,
+      colorB: 0xFFFBBF24,
+      sponsor: true,
+    ),
+  ];
+
+  @override
   Future<List<Listing>> myListings() async =>
       _listings.where((l) => l.ownerId == _me?.id).toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));

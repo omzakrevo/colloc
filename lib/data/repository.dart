@@ -25,6 +25,8 @@ abstract class Repository {
   Future<void> signOut();
 
   Future<List<Listing>> listings(ListingFilter filter);
+  Future<List<Promo>> promos();
+
   Future<List<Listing>> myListings();
   Future<Listing> createListing(ListingDraft draft);
   Future<void> setListingActive(String id, bool active);

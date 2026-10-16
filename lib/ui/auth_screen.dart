@@ -4,6 +4,8 @@ import '../config.dart';
 import '../data/repository.dart';
 import '../models.dart';
 import '../state/app_state.dart';
+import 'logo.dart';
+import 'widgets.dart';
 
 /// Connexion / inscription. Renvoie `true` à la fermeture si l'utilisateur est connecté.
 class AuthScreen extends StatefulWidget {
@@ -67,145 +69,180 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_signup ? 'Créer un compte' : 'Connexion')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 440),
-          child: Form(
-            key: _form,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
+      body: Column(
+        children: [
+          GradientHeader(
+            child: Column(
               children: [
-                if (_signup) ...[
-                  SegmentedButton<UserRole>(
-                    segments: const [
-                      ButtonSegment(
-                        value: UserRole.student,
-                        label: Text('Étudiant'),
-                        icon: Icon(Icons.school_outlined),
-                      ),
-                      ButtonSegment(
-                        value: UserRole.agency,
-                        label: Text('Agence'),
-                        icon: Icon(Icons.apartment_outlined),
-                      ),
-                    ],
-                    selected: {_role},
-                    onSelectionChanged: (v) => setState(() => _role = v.first),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _name,
-                    decoration: const InputDecoration(labelText: 'Nom complet'),
-                    validator: _req,
-                  ),
-                  const SizedBox(height: 12),
-                  if (_role == UserRole.agency) ...[
-                    TextFormField(
-                      controller: _agency,
-                      decoration: const InputDecoration(
-                        labelText: "Nom de l'agence",
-                      ),
-                      validator: _req,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  TextFormField(
-                    controller: _phone,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Téléphone / WhatsApp',
-                      helperText: 'Visible seulement après paiement de la mise en contact',
-                    ),
-                    validator: (v) => (v == null || v.trim().length < 8)
-                        ? 'Numéro invalide'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                TextFormField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'E-mail invalide'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _pass,
-                  obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Mot de passe'),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? '6 caractères minimum'
-                      : null,
-                ),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _busy ? null : _submit,
-                  child: _busy
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : Text(_signup ? "S'inscrire" : 'Se connecter'),
-                ),
-                TextButton(
-                  onPressed: () => setState(() {
-                    _signup = !_signup;
-                    _error = null;
-                  }),
-                  child: Text(
-                    _signup
-                        ? 'J\'ai déjà un compte'
-                        : 'Pas de compte ? Créer un compte',
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                 ),
-                if (AppConfig.isDemo && !_signup) ...[
-                  const Divider(height: 32),
-                  const Text(
-                    'Mode démo — connexion rapide :',
-                    textAlign: TextAlign.center,
+                const ColocLogo(size: 76),
+                const SizedBox(height: 10),
+                Text(
+                  _signup ? 'Rejoins Colloc' : 'Bon retour !',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    children: [
-                      ActionChip(
-                        label: const Text('Étudiant'),
-                        onPressed: () {
-                          _email.text = 'etudiant@demo.com';
-                          _pass.text = 'demo1234';
-                          _submit();
-                        },
-                      ),
-                      ActionChip(
-                        label: const Text('Agence'),
-                        onPressed: () {
-                          _email.text = 'agence@demo.com';
-                          _pass.text = 'demo1234';
-                          _submit();
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _signup
+                      ? 'Crée ton compte en 30 secondes'
+                      : 'Connecte-toi pour publier et contacter',
+                  style: TextStyle(color: Colors.white.withValues(alpha: .9)),
+                ),
               ],
             ),
           ),
-        ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Form(
+                  key: _form,
+                  child: ListView(
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      if (_signup) ...[
+                        SegmentedButton<UserRole>(
+                          segments: const [
+                            ButtonSegment(
+                              value: UserRole.student,
+                              label: Text('Étudiant'),
+                              icon: Icon(Icons.school_outlined),
+                            ),
+                            ButtonSegment(
+                              value: UserRole.agency,
+                              label: Text('Agence'),
+                              icon: Icon(Icons.apartment_outlined),
+                            ),
+                          ],
+                          selected: {_role},
+                          onSelectionChanged: (v) =>
+                              setState(() => _role = v.first),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _name,
+                          decoration: const InputDecoration(
+                            labelText: 'Nom complet',
+                          ),
+                          validator: _req,
+                        ),
+                        const SizedBox(height: 12),
+                        if (_role == UserRole.agency) ...[
+                          TextFormField(
+                            controller: _agency,
+                            decoration: const InputDecoration(
+                              labelText: "Nom de l'agence",
+                            ),
+                            validator: _req,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        TextFormField(
+                          controller: _phone,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'Téléphone / WhatsApp',
+                            helperText: 'Visible seulement après paiement de la mise en contact',
+                          ),
+                          validator: (v) => (v == null || v.trim().length < 8)
+                              ? 'Numéro invalide'
+                              : null,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      TextFormField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'E-mail'),
+                        validator: (v) => (v == null || !v.contains('@'))
+                            ? 'E-mail invalide'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _pass,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Mot de passe',
+                        ),
+                        validator: (v) => (v == null || v.length < 6)
+                            ? '6 caractères minimum'
+                            : null,
+                      ),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 20),
+                      GradientButton(
+                        label: _signup ? "S'inscrire" : 'Se connecter',
+                        busy: _busy,
+                        onPressed: _submit,
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _signup = !_signup;
+                          _error = null;
+                        }),
+                        child: Text(
+                          _signup
+                              ? 'J\'ai déjà un compte'
+                              : 'Pas de compte ? Créer un compte',
+                        ),
+                      ),
+                      if (AppConfig.isDemo && !_signup) ...[
+                        const Divider(height: 32),
+                        const Text(
+                          'Mode démo — connexion rapide :',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          children: [
+                            ActionChip(
+                              label: const Text('Étudiant'),
+                              onPressed: () {
+                                _email.text = 'etudiant@demo.com';
+                                _pass.text = 'demo1234';
+                                _submit();
+                              },
+                            ),
+                            ActionChip(
+                              label: const Text('Agence'),
+                              onPressed: () {
+                                _email.text = 'agence@demo.com';
+                                _pass.text = 'demo1234';
+                                _submit();
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../config.dart';
 import '../models.dart';
@@ -44,237 +43,417 @@ class _DetailScreenState extends State<DetailScreen> {
     final t = Theme.of(context).textTheme;
     final unlocked = s.contactFor(l.id);
     final mine = s.user?.id == l.ownerId;
+    final kc = kindColor(l.kind);
 
-    Widget row(String k, int v, {bool bold = false}) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+    Widget row(String k, int v) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Expanded(child: Text(k, style: bold ? t.titleSmall : t.bodyMedium)),
+          Expanded(child: Text(k, style: t.bodyMedium)),
           Text(
             v == 0 ? 'Aucune' : fcfa(v),
-            style: (bold ? t.titleSmall : t.bodyMedium)?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: bold ? kBrand : null,
-            ),
+            style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),
     );
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l.kind.label)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 120),
-            children: [
-              if (l.kind.hasHouse)
-                AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: Stack(
-                    children: [
-                      PageView(
-                        controller: _page,
-                        onPageChanged: (i) => setState(() => _idx = i),
-                        children: l.photos.isEmpty
-                            ? [PhotoView(photo: null, kind: l.kind)]
-                            : [
-                                for (final p in l.photos)
-                                  PhotoView(photo: p, kind: l.kind),
-                              ],
-                      ),
-                      if (l.photos.length > 1)
-                        Positioned(
-                          bottom: 8,
-                          right: 12,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${_idx + 1}/${l.photos.length}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+    Widget section(String title, Widget body, {int i = 0}) => FadeSlideIn(
+      index: i,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: kc,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    KindBadge(l.kind),
-                    const SizedBox(height: 8),
-                    Text(
-                      l.title,
-                      style: t.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            body,
+          ],
+        ),
+      ),
+    );
+
+    final photos = l.photos.isEmpty
+        ? [PhotoView(photo: null, kind: l.kind)]
+        : [for (final p in l.photos) PhotoView(photo: p, kind: l.kind)];
+
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: l.kind.hasHouse ? 320 : 200,
+            backgroundColor: kc,
+            foregroundColor: Colors.white,
+            leading: Padding(
+              padding: const EdgeInsets.all(8),
+              child: CircleAvatar(
+                backgroundColor: Colors.black38,
+                child: BackButton(
+                  color: Colors.white,
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: 'photo-${l.id}',
+                    child: PageView(
+                      controller: _page,
+                      onPageChanged: (i) => setState(() => _idx = i),
+                      children: photos,
+                    ),
+                  ),
+                  const IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black38,
+                            Colors.transparent,
+                            Colors.black45,
+                          ],
+                          stops: [0, .4, 1],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.place_outlined, size: 18),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '${l.neighborhood.isEmpty ? '' : '${l.neighborhood}, '}${l.city}',
-                          ),
-                        ),
-                      ],
+                  ),
+                  if (l.photos.length > 1)
+                    Positioned(
+                      bottom: 14,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < l.photos.length; i++)
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              height: 7,
+                              width: i == _idx ? 22 : 7,
+                              decoration: BoxDecoration(
+                                color: i == _idx
+                                    ? Colors.white
+                                    : Colors.white54,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 130),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FadeSlideIn(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (l.kind == ListingKind.request)
-                              row('Budget maximum / mois', l.rent, bold: true)
-                            else ...[
-                              row(
-                                l.kind == ListingKind.agency
-                                    ? 'Loyer mensuel'
-                                    : 'Loyer mensuel (par personne)',
-                                l.rent,
+                            KindBadge(l.kind),
+                            const SizedBox(height: 10),
+                            Text(
+                              l.title,
+                              style: t.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                height: 1.15,
                               ),
-                              row('Caution', l.caution),
-                              row('Frais de prestation', l.serviceFee),
-                              const Divider(),
-                              row(
-                                "Total à prévoir à l'entrée",
-                                l.entryCost,
-                                bold: true,
-                              ),
-                            ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.place,
+                                  size: 18,
+                                  color: kAccent,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${l.neighborhood.isEmpty ? '' : '${l.neighborhood}, '}${l.city}',
+                                    style: t.bodyLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Chip(
-                          avatar: const Icon(Icons.bed_outlined, size: 18),
-                          label: Text(
-                            l.kind == ListingKind.request
-                                ? '${l.spots} personne(s)'
-                                : '${l.spots} place(s) disponible(s)',
+                      section(
+                        l.kind == ListingKind.request ? 'Budget' : 'Prix',
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kc.withValues(alpha: .12),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
+                          child: l.kind == ListingKind.request
+                              ? Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Budget maximum / mois',
+                                        style: t.bodyMedium,
+                                      ),
+                                    ),
+                                    Text(
+                                      fcfa(l.rent),
+                                      style: t.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        color: kc,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: [
+                                    row(
+                                      l.kind == ListingKind.agency
+                                          ? 'Loyer mensuel'
+                                          : 'Loyer mensuel (par personne)',
+                                      l.rent,
+                                    ),
+                                    row('Caution', l.caution),
+                                    row('Frais de prestation', l.serviceFee),
+                                    const Divider(height: 24),
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            "Total à prévoir à l'entrée",
+                                            style: t.titleSmall?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        ShaderMask(
+                                          shaderCallback: (r) =>
+                                              kAccentGradient.createShader(r),
+                                          child: Text(
+                                            fcfa(l.entryCost),
+                                            style: t.titleLarge?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                         ),
-                        if (l.houseState != null)
-                          Chip(
-                            avatar: const Icon(
-                              Icons.verified_outlined,
-                              size: 18,
+                        i: 1,
+                      ),
+                      section(
+                        'Infos',
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _InfoChip(
+                              Icons.bed_outlined,
+                              l.kind == ListingKind.request
+                                  ? '${l.spots} personne(s)'
+                                  : '${l.spots} place(s) disponible(s)',
+                              kc,
                             ),
-                            label: Text('État : ${l.houseState!.label}'),
+                            if (l.houseState != null)
+                              _InfoChip(
+                                Icons.verified_outlined,
+                                'État : ${l.houseState!.label}',
+                                const Color(0xFF16A34A),
+                              ),
+                          ],
+                        ),
+                        i: 2,
+                      ),
+                      if (l.description.isNotEmpty)
+                        section(
+                          'Description',
+                          Text(
+                            l.description,
+                            style: t.bodyLarge?.copyWith(height: 1.4),
                           ),
-                      ],
-                    ),
-                    if (l.description.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      Text(
-                        'Description',
-                        style: t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          i: 3,
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(l.description),
-                    ],
-                    if (l.conditions.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      Text(
-                        'Conditions',
-                        style: t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                      if (l.conditions.isNotEmpty)
+                        section(
+                          'Conditions',
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: kAccent.withValues(alpha: .09),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: kAccent.withValues(alpha: .25),
+                              ),
+                            ),
+                            child: Text(
+                              l.conditions,
+                              style: t.bodyMedium?.copyWith(height: 1.4),
+                            ),
+                          ),
+                          i: 4,
                         ),
+                      section(
+                        'Annonceur',
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: kc.withValues(alpha: .15),
+                              child: Text(
+                                l.ownerName.characters.first.toUpperCase(),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: kc,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l.ownerName,
+                                    style: t.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  Text(
+                                    l.ownerRole == UserRole.agency
+                                        ? 'Agence immobilière'
+                                        : 'Étudiant · publié ${ago(l.createdAt)}',
+                                    style: t.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        i: 5,
                       ),
-                      const SizedBox(height: 6),
-                      Text(l.conditions),
                     ],
-                    const SizedBox(height: 20),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        child: Text(l.ownerName.characters.first.toUpperCase()),
-                      ),
-                      title: Text(l.ownerName),
-                      subtitle: Text(
-                        l.ownerRole == UserRole.agency
-                            ? 'Agence immobilière'
-                            : 'Étudiant · publié ${ago(l.createdAt)}',
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-          child: Center(
-            heightFactor: 1,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
-              child: mine
-                  ? const Text(
-                      'Ceci est votre annonce.',
-                      textAlign: TextAlign.center,
-                    )
-                  : unlocked != null
-                  ? Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () => launchUrl(
-                              Uri.parse('tel:${cleanPhone(unlocked.phone)}'),
-                            ),
-                            icon: const Icon(Icons.call),
-                            label: Text(unlocked.phone),
-                          ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+            child: Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: mine
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          'Ceci est votre annonce.',
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          tooltip: 'WhatsApp',
-                          onPressed: () => launchUrl(
-                            Uri.parse(
-                              'https://wa.me/${cleanPhone(unlocked.phone).replaceAll('+', '')}',
-                            ),
-                            mode: LaunchMode.externalApplication,
-                          ),
-                          icon: const Icon(Icons.chat),
-                        ),
-                      ],
-                    )
-                  : FilledButton.icon(
-                      onPressed: _contact,
-                      icon: const Icon(Icons.lock_open),
-                      label: Text(
-                        'Contacter · ${fcfa(AppConfig.contactFeeFcfa)}',
+                      )
+                    : unlocked != null
+                    ? ContactActions(unlocked)
+                    : GradientButton(
+                        pulse: true,
+                        icon: Icons.lock_open_rounded,
+                        label: 'Contacter · ${fcfa(AppConfig.contactFeeFcfa)}',
+                        gradient: kAccentGradient,
+                        onPressed: _contact,
                       ),
-                    ),
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip(this.icon, this.text, this.color);
+  final IconData icon;
+  final String text;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: .12),
+      borderRadius: BorderRadius.circular(30),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    ),
+  );
 }

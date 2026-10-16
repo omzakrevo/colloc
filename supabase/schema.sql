@@ -104,3 +104,28 @@ create policy "photos: envoi dans son dossier" on storage.objects for insert to 
   with check (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "photos: suppression dans son dossier" on storage.objects for delete to authenticated
   using (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Slider de l'accueil (publicités / annonces). Géré depuis le Table Editor de Supabase :
+-- ajouter une ligne = une nouvelle bannière, sans toucher à l'application.
+create table public.promos (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  subtitle text,
+  image_url text,              -- optionnel : visuel plein cadre (URL publique)
+  link_url text,               -- optionnel : ouvert au clic
+  color_a text default '0F766E', -- dégradé de fond (hex sans #)
+  color_b text default '14B8A6',
+  sponsor boolean not null default false, -- affiche « Publicité »
+  sort integer not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.promos enable row level security;
+create policy "promos: lecture publique" on public.promos for select using (active);
+-- écriture : uniquement via le dashboard / service role (aucune policy d'écriture)
+
+insert into public.promos (title, subtitle, color_a, color_b, sort) values
+  ('Ta coloc, sans prise de tête', 'Trouve une maison ou des colocataires en quelques minutes.', '0F766E', '2DD4BF', 0),
+  ('Agences : publiez vos logements', 'Photos, caution, frais : touchez des milliers d''étudiants.', '4338CA', '818CF8', 1);
+insert into public.promos (title, subtitle, color_a, color_b, sponsor, sort) values
+  ('Votre publicité ici', 'Boutiques, déménageurs, internet… parlez aux étudiants.', 'EA580C', 'FBBF24', true, 2);

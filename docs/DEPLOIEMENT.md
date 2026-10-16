@@ -67,3 +67,15 @@ flutter pub get && flutter analyze && flutter test
 flutter run -d chrome                                   # démo
 flutter run -d chrome --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...   # réel
 ```
+
+## 6. Slider de l'accueil (publicités)
+
+Les bannières viennent de la table `promos` (Supabase → Table Editor). Pour ajouter une pub : nouvelle ligne avec
+`title`, `subtitle`, éventuellement `image_url` (visuel) et `link_url` (ouvert au clic), `color_a`/`color_b` (dégradé,
+hex sans `#`), `sponsor = true` pour afficher « PUBLICITÉ », `sort` pour l'ordre, `active = false` pour la retirer.
+Aucune mise à jour de l'app n'est nécessaire. En mode démo, 3 bannières d'exemple sont fournies.
+
+## 7. Logo et icônes
+
+Source : `brand/logo.svg` (arrondi) et `brand/logo-square.svg` (plein cadre, iOS/maskable). Les icônes web, Android et iOS
+en sont dérivées ; le logo animé de l'app est `lib/ui/logo.dart` (même géométrie).

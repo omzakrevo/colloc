@@ -14,6 +14,7 @@ class AppState extends ChangeNotifier {
   AppUser? user;
   List<Listing> listings = const [];
   List<UnlockedContact> contacts = const [];
+  List<Promo> promos = const [];
   ListingFilter filter = const ListingFilter();
   bool loading = true;
   String? error;
@@ -22,7 +23,11 @@ class AppState extends ChangeNotifier {
 
   Future<void> start() async {
     user = await repo.currentUser();
-    await Future.wait([refresh(), if (user != null) loadContacts()]);
+    await Future.wait([
+      refresh(),
+      loadPromos(),
+      if (user != null) loadContacts(),
+    ]);
     _updateTimer = Timer.periodic(
       const Duration(minutes: 5),
       (_) => checkUpdate(),
@@ -62,6 +67,13 @@ class AppState extends ChangeNotifier {
   Future<void> setFilter(ListingFilter f) {
     filter = f;
     return refresh();
+  }
+
+  Future<void> loadPromos() async {
+    try {
+      promos = await repo.promos();
+    } catch (_) {}
+    notifyListeners();
   }
 
   Future<void> loadContacts() async {

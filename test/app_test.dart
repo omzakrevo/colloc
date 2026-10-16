@@ -62,7 +62,16 @@ void main() {
     );
   });
 
+  test('slider de pubs fourni par le dépôt', () async {
+    final promos = await repo.promos();
+    expect(promos.length, greaterThanOrEqualTo(3));
+    expect(promos.any((p) => p.sponsor), isTrue);
+  });
+
   testWidgets("l'app démarre et affiche les annonces", (tester) async {
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final state = AppState(repo);
     await tester.pumpWidget(ColocApp(state: state));
     await state.start();
@@ -72,6 +81,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.textContaining('2 chambres libres'), findsOneWidget);
+    expect(find.text('Ta coloc, sans prise de tête'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     state.dispose(); // arrête le timer de vérification de mise à jour
   });

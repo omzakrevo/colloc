@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../data/repository.dart';
 import '../models.dart';
 import '../state/app_state.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 class PublishScreen extends StatefulWidget {
@@ -155,6 +156,8 @@ class _PublishScreenState extends State<PublishScreen> {
                     ),
                     const SizedBox(height: 16),
                     _Choice(
+                      index: 0,
+                      gradient: kBrandGradient,
                       icon: Icons.home_work_outlined,
                       title: "J'ai une maison",
                       sub: 'Je propose une colocation',
@@ -162,6 +165,8 @@ class _PublishScreenState extends State<PublishScreen> {
                     ),
                     const SizedBox(height: 12),
                     _Choice(
+                      index: 1,
+                      gradient: kAccentGradient,
                       icon: Icons.person_search_outlined,
                       title: 'Je cherche une colocation',
                       sub: "Je n'ai pas encore de maison",
@@ -303,17 +308,11 @@ class _PublishScreenState extends State<PublishScreen> {
                           ),
                         ),
                       const SizedBox(height: 20),
-                      FilledButton(
-                        onPressed: _busy ? null : () => _submit(kind),
-                        child: _busy
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : const Text("Publier l'annonce"),
+                      GradientButton(
+                        label: "Publier l'annonce",
+                        icon: Icons.rocket_launch_outlined,
+                        busy: _busy,
+                        onPressed: () => _submit(kind),
                       ),
                     ],
                   ),
@@ -330,23 +329,68 @@ class _Choice extends StatelessWidget {
     required this.title,
     required this.sub,
     required this.onTap,
+    required this.gradient,
+    this.index = 0,
   });
   final IconData icon;
   final String title, sub;
   final VoidCallback onTap;
+  final LinearGradient gradient;
+  final int index;
   @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      contentPadding: const EdgeInsets.all(16),
-      leading: Icon(
-        icon,
-        size: 36,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      subtitle: Text(sub),
-      trailing: const Icon(Icons.chevron_right),
+  Widget build(BuildContext context) => FadeSlideIn(
+    index: index,
+    child: Pressable(
       onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: gradient.colors.first.withValues(alpha: .35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .22),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 30, color: Colors.white),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    sub,
+                    style: TextStyle(color: Colors.white.withValues(alpha: .9)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+          ],
+        ),
+      ),
     ),
   );
 }

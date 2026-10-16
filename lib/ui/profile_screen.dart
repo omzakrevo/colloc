@@ -6,6 +6,7 @@ import '../models.dart';
 import '../state/app_state.dart';
 import '../util/format.dart';
 import 'detail_screen.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -42,35 +43,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final u = s.user!;
     final t = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mon profil')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 640),
           child: RefreshIndicator(
             onRefresh: _load,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.of(context).padding.top + 16,
+                16,
+                24,
+              ),
               children: [
-                Card(
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: kBrandGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: kBrand.withValues(alpha: .3),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.all(18),
+                    textColor: Colors.white,
+                    iconColor: Colors.white,
                     leading: CircleAvatar(
-                      radius: 26,
-                      child: Text(u.displayName.characters.first.toUpperCase()),
+                      radius: 28,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        u.displayName.characters.first.toUpperCase(),
+                        style: const TextStyle(
+                          color: kBrand,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                        ),
+                      ),
                     ),
                     title: Text(
                       u.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
                     ),
                     subtitle: Text(
                       '${u.role == UserRole.agency ? 'Agence' : 'Étudiant'} · ${u.phone}',
+                      style: const TextStyle(color: Colors.white70),
                     ),
                     trailing: IconButton(
                       tooltip: 'Déconnexion',
                       icon: const Icon(Icons.logout),
                       onPressed: () async {
                         await s.signOut();
-                        if (context.mounted) toast(context, 'Déconnecté');
+                        if (context.mounted) {
+                          toast(context, 'Déconnecté');
+                        }
                       },
                     ),
                   ),

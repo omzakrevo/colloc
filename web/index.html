@@ -22,7 +22,8 @@
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#0F766E">
   <meta name="apple-mobile-web-app-title" content="Colloc">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -33,6 +34,21 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <style>
+    #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+      background:linear-gradient(160deg,#0B5E57,#0F766E 55%,#14B8A6);color:#fff;font-family:system-ui,sans-serif;z-index:10;transition:opacity .4s}
+    #splash img{width:96px;height:96px;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.25);animation:pop 1.4s ease-in-out infinite}
+    #splash b{font-size:28px;letter-spacing:.5px}
+    #splash i{font-style:normal;opacity:.8;font-size:14px}
+    @keyframes pop{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  </style>
+  <div id="splash"><img src="icons/Icon-192.png" alt=""><b>Colloc</b><i>Trouve ta coloc</i></div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var s = document.getElementById('splash');
+      if (s) { s.style.opacity = 0; setTimeout(function () { s.remove(); }, 450); }
+    });
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
