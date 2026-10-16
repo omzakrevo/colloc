@@ -58,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    gradient: kBrandGradient,
+                    gradient: kLightGradient,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -70,15 +70,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(18),
-                    textColor: Colors.white,
-                    iconColor: Colors.white,
+                    textColor: kInk,
+                    iconColor: kBrand,
                     leading: CircleAvatar(
                       radius: 28,
-                      backgroundColor: Colors.white,
+                      backgroundColor: kBrand,
                       child: Text(
                         u.displayName.characters.first.toUpperCase(),
                         style: const TextStyle(
-                          color: kBrand,
+                          color: Colors.white,
                           fontWeight: FontWeight.w900,
                           fontSize: 22,
                         ),
@@ -97,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         UserRole.admin => 'Administrateur',
                         _ => 'Étudiant',
                       }} · ${u.phone}',
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: Colors.black54),
                     ),
                     trailing: IconButton(
                       tooltip: 'Déconnexion',

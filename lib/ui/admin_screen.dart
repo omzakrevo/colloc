@@ -64,18 +64,16 @@ class _AdminScreenState extends State<AdminScreen> {
             duration: const Duration(milliseconds: 250),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: sel ? Colors.white : Colors.white.withValues(alpha: .16),
+              color: sel ? kBrand : Colors.white,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: sel ? 1 : .35),
-              ),
+              border: Border.all(color: sel ? kBrand : Colors.grey.shade300),
             ),
             child: Text(
               '$label · $n',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: sel ? kBrand : Colors.white,
+                color: sel ? Colors.white : kInk,
               ),
             ),
           ),
@@ -95,7 +93,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   const Text(
                     'Paiements',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: kInk,
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
                     ),
@@ -103,9 +101,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   const SizedBox(height: 4),
                   Text(
                     'Vérifiez la réception des 1 000 FCFA puis validez pour débloquer le contact.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: .92),
-                    ),
+                    style: TextStyle(color: kInk.withValues(alpha: .75)),
                   ),
                   const SizedBox(height: 14),
                   SingleChildScrollView(

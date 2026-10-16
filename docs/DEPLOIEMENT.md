@@ -86,8 +86,10 @@ Aucune mise à jour de l'app n'est nécessaire. En mode démo, 3 bannières d'ex
 Source : `brand/logo.svg` (arrondi) et `brand/logo-square.svg` (plein cadre, iOS/maskable). Les icônes web, Android et iOS
 en sont dérivées ; le logo animé de l'app est `lib/ui/logo.dart` (même géométrie).
 
-## 8. Photos de maisons d'exemple
+## 8. Images de maisons d'exemple (illustrations)
 
-Le mode démo affiche les photos présentes dans `assets/houses/` (`house1.jpg` … `house8.jpg` : 1-3 façades, 4 maison à cour,
-5 chambre, 6 salon, 7 cuisine, 8 studio). Sans fichier, un visuel coloré est utilisé. Déposez les images (JPG, ~1280 px de large)
-puis poussez sur `main`. Les vraies annonces utilisent les photos envoyées par les publieurs.
+Les images de démo (`assets/houses/house1.jpg` … `house8.jpg` : villa, villa moderne, immeuble, maison à cour, chambre, salon,
+cuisine, studio) sont des **illustrations dessinées en code**, pas des photographies. Elles se régénèrent avec
+`python3 scripts/make_houses.py` (SVG dans `brand/houses/`) puis `node scripts/render_houses.js` (rendu JPG via Chromium).
+Pour utiliser de vraies photos, remplacez simplement les fichiers `assets/houses/house*.jpg` (JPG, ~1200 px de large) et poussez sur `main`.
+Les vraies annonces utilisent les photos envoyées par les publieurs.

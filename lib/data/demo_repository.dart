@@ -140,9 +140,9 @@ class DemoRepository implements Repository {
   /// Photos d'exemple : on n'utilise que celles présentes dans assets/houses/ (house1.jpg … house8.jpg).
   Future<void> _attachDemoPhotos() async {
     const plan = {
-      'l1': ['house5', 'house6', 'house4'],
+      'l1': ['house3', 'house5', 'house6'],
       'l2': ['house2', 'house1'],
-      'l4': ['house8', 'house3'],
+      'l4': ['house8', 'house4'],
     };
     Set<String> available;
     try {
@@ -231,22 +231,22 @@ class DemoRepository implements Repository {
       id: 'p1',
       title: 'Ta coloc, sans prise de tête',
       subtitle: 'Trouve une maison ou des colocataires en quelques minutes.',
-      colorA: 0xFF0F766E,
-      colorB: 0xFF2DD4BF,
+      colorA: 0xFFD1FAE5,
+      colorB: 0xFFA7F3D0,
     ),
     Promo(
       id: 'p2',
       title: 'Agences : publiez vos logements',
       subtitle: 'Photos, caution, frais : touchez des milliers d\'étudiants.',
-      colorA: 0xFF4338CA,
-      colorB: 0xFF818CF8,
+      colorA: 0xFFE0E7FF,
+      colorB: 0xFFC7D2FE,
     ),
     Promo(
       id: 'p3',
       title: 'Votre publicité ici',
       subtitle: 'Boutiques, déménageurs, internet… parlez aux étudiants.',
-      colorA: 0xFFEA580C,
-      colorB: 0xFFFBBF24,
+      colorA: 0xFFFEF3C7,
+      colorB: 0xFFFDE68A,
       sponsor: true,
     ),
   ];

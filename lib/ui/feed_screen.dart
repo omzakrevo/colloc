@@ -42,23 +42,21 @@ class _FeedScreenState extends State<FeedScreen> {
             curve: Curves.easeOut,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: sel ? Colors.white : Colors.white.withValues(alpha: .16),
+              color: sel ? kBrand : Colors.white,
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: sel ? 1 : .35),
-              ),
+              border: Border.all(color: sel ? kBrand : Colors.grey.shade300),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: sel ? kBrand : Colors.white),
+                Icon(icon, size: 16, color: sel ? Colors.white : kBrand),
                 const SizedBox(width: 6),
                 Text(
                   label,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: sel ? kBrand : Colors.white,
+                    color: sel ? Colors.white : kInk,
                   ),
                 ),
               ],
@@ -82,7 +80,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   const Text(
                     'Colloc',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: kInk,
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: .3,
@@ -97,8 +95,8 @@ class _FeedScreenState extends State<FeedScreen> {
                       icon: const Icon(Icons.login, size: 18),
                       label: const Text('Connexion'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white54),
+                        foregroundColor: kBrand,
+                        side: const BorderSide(color: kBrand),
                         shape: const StadiumBorder(),
                       ),
                     )
@@ -106,7 +104,7 @@ class _FeedScreenState extends State<FeedScreen> {
                     Text(
                       'Salut, ${s.user!.displayName.split(' ').first}',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: kInk,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -127,7 +125,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 child: const Text(
                   'Trouve ta coloc,\nsans prise de tête.',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: kInk,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                     height: 1.1,

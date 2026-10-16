@@ -5,6 +5,7 @@ import '../data/repository.dart';
 import '../models.dart';
 import '../state/app_state.dart';
 import 'logo.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 /// Connexion / inscription. Renvoie `true` à la fermeture si l'utilisateur est connecté.
@@ -78,7 +79,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   alignment: Alignment.centerLeft,
                   child: IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: kInk),
                   ),
                 ),
                 const ColocLogo(size: 76),
@@ -86,7 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 Text(
                   _signup ? 'Rejoins Colloc' : 'Bon retour !',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: kInk,
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
                   ),
@@ -96,7 +97,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   _signup
                       ? 'Crée ton compte en 30 secondes'
                       : 'Connecte-toi pour publier et contacter',
-                  style: TextStyle(color: Colors.white.withValues(alpha: .9)),
+                  style: TextStyle(color: kInk.withValues(alpha: .7)),
                 ),
               ],
             ),

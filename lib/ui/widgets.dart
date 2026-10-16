@@ -26,7 +26,10 @@ class PhotoView extends StatelessWidget {
     final placeholder = Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [c, Color.lerp(c, Colors.white, .45)!],
+          colors: [
+            Color.lerp(c, Colors.white, .72)!,
+            Color.lerp(c, Colors.white, .45)!,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -39,7 +42,7 @@ class PhotoView extends StatelessWidget {
             top: -30,
             child: CircleAvatar(
               radius: 80,
-              backgroundColor: Colors.white.withValues(alpha: .12),
+              backgroundColor: Colors.white.withValues(alpha: .45),
             ),
           ),
           Positioned(
@@ -47,16 +50,10 @@ class PhotoView extends StatelessWidget {
             bottom: -50,
             child: CircleAvatar(
               radius: 90,
-              backgroundColor: Colors.white.withValues(alpha: .10),
+              backgroundColor: kBrand.withValues(alpha: .35),
             ),
           ),
-          Center(
-            child: Icon(
-              kindIcon(kind),
-              size: 56,
-              color: Colors.white.withValues(alpha: .9),
-            ),
-          ),
+          Center(child: Icon(kindIcon(kind), size: 56, color: c)),
         ],
       ),
     );
@@ -327,9 +324,16 @@ class _GradientHeaderState extends State<GradientHeader>
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      gradient: kBrandGradient,
-      borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+    decoration: BoxDecoration(
+      gradient: kLightGradient,
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+      boxShadow: [
+        BoxShadow(
+          color: kBrand.withValues(alpha: .12),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+        ),
+      ],
     ),
     child: ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -347,7 +351,7 @@ class _GradientHeaderState extends State<GradientHeader>
                       top: -40 + 10 * math.cos(a),
                       child: CircleAvatar(
                         radius: 110,
-                        backgroundColor: Colors.white.withValues(alpha: .08),
+                        backgroundColor: kBrandLight.withValues(alpha: .14),
                       ),
                     ),
                     Positioned(
@@ -355,7 +359,7 @@ class _GradientHeaderState extends State<GradientHeader>
                       bottom: -70 + 14 * math.sin(a),
                       child: CircleAvatar(
                         radius: 100,
-                        backgroundColor: kAccent.withValues(alpha: .18),
+                        backgroundColor: kAccent.withValues(alpha: .16),
                       ),
                     ),
                     Positioned(
@@ -363,7 +367,7 @@ class _GradientHeaderState extends State<GradientHeader>
                       bottom: 10 + 8 * math.cos(a + 2),
                       child: CircleAvatar(
                         radius: 26,
-                        backgroundColor: Colors.white.withValues(alpha: .08),
+                        backgroundColor: kBrandLight.withValues(alpha: .14),
                       ),
                     ),
                     Positioned(
@@ -371,7 +375,7 @@ class _GradientHeaderState extends State<GradientHeader>
                       top: 20 + 10 * math.sin(a),
                       child: CircleAvatar(
                         radius: 12,
-                        backgroundColor: Colors.white.withValues(alpha: .10),
+                        backgroundColor: kBrand.withValues(alpha: .10),
                       ),
                     ),
                   ],
@@ -771,6 +775,10 @@ class _PromoSlide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final a = Color(p.colorA), b = Color(p.colorB);
+    final light =
+        a.computeLuminance() + b.computeLuminance() >
+        1.0; // fond clair => texte foncé
+    final fg = light ? kInk : Colors.white;
     return GestureDetector(
       onTap: p.linkUrl == null
           ? null
@@ -817,7 +825,9 @@ class _PromoSlide extends StatelessWidget {
               top: -30,
               child: CircleAvatar(
                 radius: 70,
-                backgroundColor: Colors.white.withValues(alpha: .13),
+                backgroundColor: Colors.white.withValues(
+                  alpha: light ? .5 : .13,
+                ),
               ),
             ),
             Positioned(
@@ -825,7 +835,7 @@ class _PromoSlide extends StatelessWidget {
               bottom: -40,
               child: CircleAvatar(
                 radius: 55,
-                backgroundColor: Colors.white.withValues(alpha: .10),
+                backgroundColor: kBrand.withValues(alpha: .10),
               ),
             ),
             Padding(
@@ -842,7 +852,7 @@ class _PromoSlide extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black26,
+                        color: light ? kAccent : Colors.black26,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -859,8 +869,8 @@ class _PromoSlide extends StatelessWidget {
                     p.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: fg,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       height: 1.15,
@@ -873,7 +883,7 @@ class _PromoSlide extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: .92),
+                        color: fg.withValues(alpha: .85),
                         fontSize: 13,
                       ),
                     ),

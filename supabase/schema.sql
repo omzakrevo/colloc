@@ -186,7 +186,7 @@ create table public.promos (
   subtitle text,
   image_url text,              -- optionnel : visuel plein cadre (URL publique)
   link_url text,               -- optionnel : ouvert au clic
-  color_a text default '0F766E', -- dégradé de fond (hex sans #)
+  color_a text default '0F766E', -- dégradé de fond (hex sans #) ; fond clair => texte foncé, fond sombre => texte blanc automatiquement
   color_b text default '14B8A6',
   sponsor boolean not null default false, -- affiche « Publicité »
   sort integer not null default 0,
@@ -198,7 +198,7 @@ create policy "promos: lecture publique" on public.promos for select using (acti
 -- écriture : uniquement via le dashboard / service role (aucune policy d'écriture)
 
 insert into public.promos (title, subtitle, color_a, color_b, sort) values
-  ('Ta coloc, sans prise de tête', 'Trouve une maison ou des colocataires en quelques minutes.', '0F766E', '2DD4BF', 0),
-  ('Agences : publiez vos logements', 'Photos, caution, frais : touchez des milliers d''étudiants.', '4338CA', '818CF8', 1);
+  ('Ta coloc, sans prise de tête', 'Trouve une maison ou des colocataires en quelques minutes.', 'D1FAE5', 'A7F3D0', 0),
+  ('Agences : publiez vos logements', 'Photos, caution, frais : touchez des milliers d''étudiants.', 'E0E7FF', 'C7D2FE', 1);
 insert into public.promos (title, subtitle, color_a, color_b, sponsor, sort) values
-  ('Votre publicité ici', 'Boutiques, déménageurs, internet… parlez aux étudiants.', 'EA580C', 'FBBF24', true, 2);
+  ('Votre publicité ici', 'Boutiques, déménageurs, internet… parlez aux étudiants.', 'FEF3C7', 'FDE68A', true, 2);

@@ -9,17 +9,24 @@ const kBrandLight = Color(0xFF14B8A6);
 const kAccent = Color(0xFFF97316);
 const kIndigo = Color(0xFF4338CA);
 const kInk = Color(0xFF0F1F1D);
-const kBg = Color(0xFFF1F6F5);
+const kBg = Color(0xFFF7FBFA);
 
 const kBrandGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
-  colors: [kBrandDark, kBrand, kBrandLight],
+  colors: [kBrandDark, kBrand],
 );
 const kAccentGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
-  colors: [Color(0xFFEA580C), Color(0xFFFB923C)],
+  colors: [Color(0xFFC2410C), Color(0xFFEA580C)],
+);
+
+/// En-tête clair : le texte foncé (kInk) y reste très lisible.
+const kLightGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [Color(0xFFF0FBF8), Color(0xFFD5F2EA)],
 );
 
 ThemeData buildTheme() {
