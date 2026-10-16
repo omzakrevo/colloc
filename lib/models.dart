@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-enum UserRole { student, agency }
+enum UserRole { student, agency, admin }
 
 /// Type d'annonce.
 enum ListingKind {
@@ -47,6 +47,8 @@ class AppUser {
   final UserRole role;
   final String? agencyName;
 
+  bool get isAdmin => role == UserRole.admin;
+
   String get displayName =>
       role == UserRole.agency && agencyName != null && agencyName!.isNotEmpty
       ? agencyName!
@@ -55,10 +57,12 @@ class AppUser {
 
 /// Une photo : soit une URL (serveur), soit des octets (choisie sur l'appareil).
 class Photo {
-  const Photo.url(String this.url) : bytes = null;
-  const Photo.bytes(Uint8List this.bytes) : url = null;
+  const Photo.url(String this.url) : bytes = null, asset = null;
+  const Photo.bytes(Uint8List this.bytes) : url = null, asset = null;
+  const Photo.asset(String this.asset) : url = null, bytes = null;
   final String? url;
   final Uint8List? bytes;
+  final String? asset;
 }
 
 class Listing {
@@ -115,7 +119,7 @@ class Listing {
   /// Total à prévoir à l'entrée (1er loyer + caution + frais).
   int get entryCost => rent + caution + serviceFee;
 
-  Listing copyWith({bool? active}) => Listing(
+  Listing copyWith({bool? active, List<Photo>? photos}) => Listing(
     id: id,
     ownerId: ownerId,
     ownerName: ownerName,
@@ -132,7 +136,7 @@ class Listing {
     spots: spots,
     houseState: houseState,
     conditions: conditions,
-    photos: photos,
+    photos: photos ?? this.photos,
     active: active ?? this.active,
   );
 }
@@ -200,4 +204,52 @@ class Promo {
 
   /// Affiche la mention « Publicité ».
   final bool sponsor;
+}
+
+enum PaymentStatus { pending, approved, rejected }
+
+extension PaymentStatusX on PaymentStatus {
+  String get label => switch (this) {
+    PaymentStatus.pending => 'En attente de validation',
+    PaymentStatus.approved => 'Validé',
+    PaymentStatus.rejected => 'Refusé',
+  };
+}
+
+/// Moyen de paiement accepté (numéro Mobile Money de l'administrateur).
+class PaymentMethodInfo {
+  const PaymentMethodInfo({
+    required this.id,
+    required this.label,
+    required this.number,
+    this.holder = '',
+  });
+  final String id, label, number, holder;
+}
+
+/// Avis de paiement : l'utilisateur déclare avoir payé la mise en contact,
+/// l'administrateur vérifie puis valide (ce qui débloque le numéro) ou refuse.
+class PaymentNotice {
+  const PaymentNotice({
+    required this.id,
+    required this.listingId,
+    required this.listingTitle,
+    required this.payerName,
+    required this.payerPhone,
+    required this.method,
+    required this.reference,
+    required this.status,
+    required this.createdAt,
+    this.amount = 1000,
+  });
+  final String id,
+      listingId,
+      listingTitle,
+      payerName,
+      payerPhone,
+      method,
+      reference;
+  final PaymentStatus status;
+  final DateTime createdAt;
+  final int amount;
 }

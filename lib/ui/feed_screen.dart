@@ -269,13 +269,17 @@ class _FeedScreenState extends State<FeedScreen> {
             ),
           ),
           if (s.loading)
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(40),
-                  child: CircularProgressIndicator(),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+              sliver: SliverGrid.builder(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 430,
+                  mainAxisExtent: 300,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
+                itemCount: 4,
+                itemBuilder: (_, _) => const SkeletonCard(),
               ),
             )
           else if (s.error != null)
@@ -353,6 +357,114 @@ class _FeedScreenState extends State<FeedScreen> {
                   ),
                 );
               },
+            ),
+          SliverToBoxAdapter(child: center(const _HowItWorks())),
+        ],
+      ),
+    );
+  }
+}
+
+class _HowItWorks extends StatelessWidget {
+  const _HowItWorks();
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    const steps = [
+      (
+        Icons.search_rounded,
+        'Trouve',
+        "Parcours les maisons et les demandes, filtre par ville ou quartier.",
+        kBrand,
+      ),
+      (
+        Icons.lock_open_rounded,
+        'Contacte',
+        '1 000 FCFA par mise en contact, validée par notre équipe.',
+        kAccent,
+      ),
+      (
+        Icons.key_rounded,
+        'Emménage',
+        'Appelle ou écris sur WhatsApp, visitez et installez-vous.',
+        kIndigo,
+      ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 36),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 5,
+                height: 22,
+                decoration: BoxDecoration(
+                  gradient: kAccentGradient,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Comment ça marche',
+                style: t.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          for (var i = 0; i < steps.length; i++)
+            FadeSlideIn(
+              index: i,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: steps[i].$4.withValues(alpha: .10),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            steps[i].$4,
+                            Color.lerp(steps[i].$4, Colors.white, .35)!,
+                          ],
+                        ),
+                      ),
+                      child: Icon(steps[i].$1, color: Colors.white),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${i + 1}. ${steps[i].$2}',
+                            style: t.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(steps[i].$3, style: t.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
         ],
       ),

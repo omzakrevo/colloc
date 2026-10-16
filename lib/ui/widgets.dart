@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -62,6 +63,13 @@ class PhotoView extends StatelessWidget {
     final p = photo;
     if (p == null) return placeholder;
     if (p.bytes != null) return Image.memory(p.bytes!, fit: fit);
+    if (p.asset != null) {
+      return Image.asset(
+        p.asset!,
+        fit: fit,
+        errorBuilder: (_, _, _) => placeholder,
+      );
+    }
     return Image.network(
       p.url!,
       fit: fit,
@@ -291,8 +299,8 @@ class _GradientButtonState extends State<GradientButton>
   }
 }
 
-/// Bandeau en dégradé à coins arrondis, avec bulles décoratives.
-class GradientHeader extends StatelessWidget {
+/// Bandeau en dégradé à coins arrondis, avec bulles qui flottent doucement.
+class GradientHeader extends StatefulWidget {
   const GradientHeader({
     super.key,
     required this.child,
@@ -300,6 +308,23 @@ class GradientHeader extends StatelessWidget {
   });
   final Widget child;
   final EdgeInsets padding;
+  @override
+  State<GradientHeader> createState() => _GradientHeaderState();
+}
+
+class _GradientHeaderState extends State<GradientHeader>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 12),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Container(
     decoration: const BoxDecoration(
@@ -310,37 +335,132 @@ class GradientHeader extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
       child: Stack(
         children: [
-          Positioned(
-            right: -50,
-            top: -40,
-            child: CircleAvatar(
-              radius: 110,
-              backgroundColor: Colors.white.withValues(alpha: .08),
-            ),
-          ),
-          Positioned(
-            left: -60,
-            bottom: -70,
-            child: CircleAvatar(
-              radius: 100,
-              backgroundColor: kAccent.withValues(alpha: .18),
-            ),
-          ),
-          Positioned(
-            right: 70,
-            bottom: 10,
-            child: CircleAvatar(
-              radius: 26,
-              backgroundColor: Colors.white.withValues(alpha: .07),
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (_, _) {
+                final a = _c.value * 2 * math.pi;
+                return Stack(
+                  children: [
+                    Positioned(
+                      right: -50 + 14 * math.sin(a),
+                      top: -40 + 10 * math.cos(a),
+                      child: CircleAvatar(
+                        radius: 110,
+                        backgroundColor: Colors.white.withValues(alpha: .08),
+                      ),
+                    ),
+                    Positioned(
+                      left: -60 + 12 * math.cos(a),
+                      bottom: -70 + 14 * math.sin(a),
+                      child: CircleAvatar(
+                        radius: 100,
+                        backgroundColor: kAccent.withValues(alpha: .18),
+                      ),
+                    ),
+                    Positioned(
+                      right: 70 + 20 * math.sin(a + 1),
+                      bottom: 10 + 8 * math.cos(a + 2),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.white.withValues(alpha: .08),
+                      ),
+                    ),
+                    Positioned(
+                      left: 150 + 16 * math.cos(a + 3),
+                      top: 20 + 10 * math.sin(a),
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Colors.white.withValues(alpha: .10),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
           SafeArea(
             bottom: false,
-            child: Padding(padding: padding, child: child),
+            child: Padding(padding: widget.padding, child: widget.child),
           ),
         ],
       ),
     ),
+  );
+}
+
+/// Carte « squelette » qui scintille pendant le chargement.
+class SkeletonCard extends StatefulWidget {
+  const SkeletonCard({super.key});
+  @override
+  State<SkeletonCard> createState() => _SkeletonCardState();
+}
+
+class _SkeletonCardState extends State<SkeletonCard>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1300),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _c,
+    builder: (_, _) {
+      final x = -1 + 3 * _c.value;
+      Widget bar(double w, double h) => Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          color: Colors.white,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (r) => LinearGradient(
+            begin: Alignment(x - 1, 0),
+            end: Alignment(x + 1, 0),
+            colors: [
+              Colors.grey.shade200,
+              Colors.grey.shade50,
+              Colors.grey.shade200,
+            ],
+          ).createShader(r),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(height: 160, color: Colors.white),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    bar(200, 16),
+                    const SizedBox(height: 10),
+                    bar(120, 12),
+                    const SizedBox(height: 26),
+                    bar(160, 12),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 

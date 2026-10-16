@@ -21,7 +21,11 @@ class SupabaseRepository implements Repository {
       id: id,
       name: p['name'] as String,
       phone: (p['phone'] as String?) ?? '',
-      role: p['role'] == 'agency' ? UserRole.agency : UserRole.student,
+      role: switch (p['role']) {
+        'agency' => UserRole.agency,
+        'admin' => UserRole.admin,
+        _ => UserRole.student,
+      },
       agencyName: p['agency_name'] as String?,
     );
   }
@@ -227,27 +231,90 @@ class SupabaseRepository implements Repository {
   }
 
   @override
-  Future<UnlockedContact> payAndUnlock({
+  Future<List<PaymentMethodInfo>> paymentMethods() async {
+    final row = await _db
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'payment_methods')
+        .maybeSingle();
+    final list = (row?['value'] as List?) ?? const [];
+    return [
+      for (final m in list)
+        PaymentMethodInfo(
+          id: m['id'] as String,
+          label: m['label'] as String,
+          number: m['number'] as String,
+          holder: (m['holder'] as String?) ?? '',
+        ),
+    ];
+  }
+
+  PaymentNotice _notice(Map<String, dynamic> r) => PaymentNotice(
+    id: r['id'] as String,
+    listingId: r['listing_id'] as String,
+    listingTitle: (r['listing_title'] as String?) ?? '',
+    payerName: (r['payer_name'] as String?) ?? '',
+    payerPhone: (r['payer_phone'] as String?) ?? '',
+    method: (r['method'] as String?) ?? '',
+    reference: (r['reference'] as String?) ?? '',
+    status: PaymentStatus.values.byName(r['status'] as String),
+    createdAt: DateTime.parse(r['created_at'] as String),
+    amount: (r['amount'] as num?)?.toInt() ?? 1000,
+  );
+
+  @override
+  Future<PaymentNotice> submitPayment({
     required String listingId,
     required String method,
     required String payerPhone,
+    required String reference,
   }) async {
-    final res = await _db.functions.invoke(
-      'pay-contact',
-      body: {
-        'listing_id': listingId,
-        'method': method,
-        'payer_phone': payerPhone,
-      },
-    );
-    if (res.status != 200) {
-      final msg = res.data is Map ? (res.data['error'] as String?) : null;
-      throw AppException(msg ?? 'Paiement impossible pour le moment.');
+    try {
+      await _db.rpc(
+        'request_unlock',
+        params: {
+          'p_listing': listingId,
+          'p_method': method,
+          'p_phone': payerPhone,
+          'p_reference': reference,
+        },
+      );
+    } on PostgrestException catch (e) {
+      throw AppException(e.message);
     }
-    final all = await unlockedContacts();
-    return all.firstWhere(
-      (c) => c.listingId == listingId,
-      orElse: () => throw AppException('Paiement en attente de confirmation.'),
-    );
+    final mine = await myPayments();
+    return mine.firstWhere((p) => p.listingId == listingId);
+  }
+
+  @override
+  Future<List<PaymentNotice>> myPayments() async {
+    final rows = await _db.rpc('my_payments') as List;
+    return rows
+        .map<PaymentNotice>((r) => _notice(r as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<PaymentNotice>> adminPayments() async {
+    try {
+      final rows = await _db.rpc('admin_payments') as List;
+      return rows
+          .map<PaymentNotice>((r) => _notice(r as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw AppException(e.message);
+    }
+  }
+
+  @override
+  Future<void> reviewPayment(String id, {required bool approve}) async {
+    try {
+      await _db.rpc(
+        'admin_review_payment',
+        params: {'p_id': id, 'p_approve': approve},
+      );
+    } on PostgrestException catch (e) {
+      throw AppException(e.message);
+    }
   }
 }

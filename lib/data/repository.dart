@@ -32,14 +32,26 @@ abstract class Repository {
   Future<void> setListingActive(String id, bool active);
   Future<void> deleteListing(String id);
 
-  /// Contacts déjà débloqués par l'utilisateur courant.
+  /// Contacts débloqués (= paiements validés par l'administrateur) de l'utilisateur courant.
   Future<List<UnlockedContact>> unlockedContacts();
 
-  /// Paie [AppConfig.contactFeeFcfa] puis renvoie le contact de l'annonceur.
-  /// [method] : 'wave' | 'orange' | 'mtn' | 'moov'.
-  Future<UnlockedContact> payAndUnlock({
+  /// Numéros Mobile Money où envoyer les frais de mise en contact.
+  Future<List<PaymentMethodInfo>> paymentMethods();
+
+  /// Émet un avis de paiement (statut « en attente »). Le contact reste caché jusqu'à validation.
+  Future<PaymentNotice> submitPayment({
     required String listingId,
     required String method,
     required String payerPhone,
+    required String reference,
   });
+
+  /// Avis de paiement de l'utilisateur courant.
+  Future<List<PaymentNotice>> myPayments();
+
+  /// Administrateur : tous les avis de paiement.
+  Future<List<PaymentNotice>> adminPayments();
+
+  /// Administrateur : valide (débloque le contact) ou refuse un avis.
+  Future<void> reviewPayment(String id, {required bool approve});
 }

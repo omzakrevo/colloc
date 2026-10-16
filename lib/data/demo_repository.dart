@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'package:flutter/services.dart';
 
 import '../models.dart';
 import 'repository.dart';
@@ -11,10 +11,16 @@ class _Account {
 
 /// Données en mémoire : permet de tester toute l'app sans serveur.
 /// Comptes de démo : etudiant@demo.com / agence@demo.com — mot de passe "demo1234".
+class _Payment {
+  _Payment(this.userId, this.notice);
+  final String userId;
+  PaymentNotice notice;
+}
+
 class DemoRepository implements Repository {
   final _accounts = <_Account>[];
   final _listings = <Listing>[];
-  final _unlocks = <String, List<UnlockedContact>>{}; // userId -> contacts
+  final _payments = <_Payment>[];
   final _phones = <String, String>{}; // userId -> phone
   AppUser? _me;
   var _seq = 100;
@@ -40,12 +46,19 @@ class DemoRepository implements Repository {
       role: UserRole.agency,
       agencyName: 'Teranga Immo',
     );
+    final adm = AppUser(
+      id: 'u4',
+      name: 'Administrateur Colloc',
+      phone: '+221 70 000 00 00',
+      role: UserRole.admin,
+    );
     _accounts.addAll([
+      _Account(adm, 'demo1234', 'admin@demo.com'),
       _Account(s, 'demo1234', 'etudiant@demo.com'),
       _Account(s2, 'demo1234', 'etudiant2@demo.com'),
       _Account(a, 'demo1234', 'agence@demo.com'),
     ]);
-    for (final u in [s, s2, a]) {
+    for (final u in [s, s2, a, adm]) {
       _phones[u.id] = u.phone;
     }
     final now = DateTime.now();
@@ -120,6 +133,36 @@ class DemoRepository implements Repository {
         createdAt: now.subtract(const Duration(days: 4)),
       ),
     ]);
+
+    await _attachDemoPhotos();
+  }
+
+  /// Photos d'exemple : on n'utilise que celles présentes dans assets/houses/ (house1.jpg … house8.jpg).
+  Future<void> _attachDemoPhotos() async {
+    const plan = {
+      'l1': ['house5', 'house6', 'house4'],
+      'l2': ['house2', 'house1'],
+      'l4': ['house8', 'house3'],
+    };
+    Set<String> available;
+    try {
+      available = (await AssetManifest.loadFromAssetBundle(rootBundle))
+          .listAssets()
+          .toSet();
+    } catch (_) {
+      return;
+    }
+    for (final e in plan.entries) {
+      final photos = [
+        for (final n in e.value)
+          if (available.contains('assets/houses/$n.jpg'))
+            Photo.asset('assets/houses/$n.jpg'),
+      ];
+      final i = _listings.indexWhere((l) => l.id == e.key);
+      if (photos.isNotEmpty && i >= 0) {
+        _listings[i] = _listings[i].copyWith(photos: photos);
+      }
+    }
   }
 
   @override
@@ -255,34 +298,114 @@ class DemoRepository implements Repository {
       _listings.removeWhere((l) => l.id == id && l.ownerId == _me?.id);
 
   @override
-  Future<List<UnlockedContact>> unlockedContacts() async =>
-      List.of(_unlocks[_me?.id] ?? const []);
+  Future<List<UnlockedContact>> unlockedContacts() async {
+    final me = _me;
+    if (me == null) return const [];
+    return [
+      for (final p in _payments)
+        if (p.userId == me.id && p.notice.status == PaymentStatus.approved)
+          UnlockedContact(
+            listingId: p.notice.listingId,
+            name: _listings
+                .firstWhere((l) => l.id == p.notice.listingId)
+                .ownerName,
+            phone:
+                _phones[_listings
+                    .firstWhere((l) => l.id == p.notice.listingId)
+                    .ownerId] ??
+                '',
+            at: p.notice.createdAt,
+          ),
+    ];
+  }
 
   @override
-  Future<UnlockedContact> payAndUnlock({
+  Future<List<PaymentMethodInfo>> paymentMethods() async => const [
+    PaymentMethodInfo(
+      id: 'wave',
+      label: 'Wave',
+      number: '+221 70 000 00 01',
+      holder: 'Colloc (démo)',
+    ),
+    PaymentMethodInfo(
+      id: 'orange',
+      label: 'Orange Money',
+      number: '+221 70 000 00 02',
+      holder: 'Colloc (démo)',
+    ),
+  ];
+
+  @override
+  Future<PaymentNotice> submitPayment({
     required String listingId,
     required String method,
     required String payerPhone,
+    required String reference,
   }) async {
     final me = _me ?? (throw AppException('Connectez-vous pour contacter.'));
     final l = _listings.firstWhere(
       (l) => l.id == listingId,
       orElse: () => throw AppException('Annonce introuvable.'),
     );
-    if (l.ownerId == me.id) throw AppException('C\'est votre propre annonce.');
-    await Future<void>.delayed(
-      Duration(milliseconds: 600 + Random().nextInt(400)),
-    ); // paiement simulé
-    final list = _unlocks.putIfAbsent(me.id, () => []);
-    final existing = list.where((c) => c.listingId == listingId);
-    if (existing.isNotEmpty) return existing.first;
-    final c = UnlockedContact(
+    if (l.ownerId == me.id) throw AppException("C'est votre propre annonce.");
+    final existing = _payments
+        .where((p) => p.userId == me.id && p.notice.listingId == listingId)
+        .toList();
+    if (existing.any((p) => p.notice.status != PaymentStatus.rejected)) {
+      throw AppException('Un avis existe déjà pour cette annonce.');
+    }
+    _payments.removeWhere((p) => existing.contains(p));
+    final n = PaymentNotice(
+      id: 'p${_seq++}',
       listingId: listingId,
-      name: l.ownerName,
-      phone: _phones[l.ownerId] ?? '',
-      at: DateTime.now(),
+      listingTitle: l.title,
+      payerName: me.displayName,
+      payerPhone: payerPhone,
+      method: method,
+      reference: reference,
+      status: PaymentStatus.pending,
+      createdAt: DateTime.now(),
     );
-    list.add(c);
-    return c;
+    _payments.add(_Payment(me.id, n));
+    return n;
+  }
+
+  @override
+  Future<List<PaymentNotice>> myPayments() async => [
+    for (final p in _payments)
+      if (p.userId == _me?.id) p.notice,
+  ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  @override
+  Future<List<PaymentNotice>> adminPayments() async {
+    if (_me?.isAdmin != true) {
+      throw AppException('Réservé à l\'administrateur.');
+    }
+    return [for (final p in _payments) p.notice]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<void> reviewPayment(String id, {required bool approve}) async {
+    if (_me?.isAdmin != true) {
+      throw AppException('Réservé à l\'administrateur.');
+    }
+    final p = _payments.firstWhere(
+      (p) => p.notice.id == id,
+      orElse: () => throw AppException('Avis introuvable.'),
+    );
+    final n = p.notice;
+    p.notice = PaymentNotice(
+      id: n.id,
+      listingId: n.listingId,
+      listingTitle: n.listingTitle,
+      payerName: n.payerName,
+      payerPhone: n.payerPhone,
+      method: n.method,
+      reference: n.reference,
+      createdAt: n.createdAt,
+      amount: n.amount,
+      status: approve ? PaymentStatus.approved : PaymentStatus.rejected,
+    );
   }
 }

@@ -28,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _load() async {
     final s = AppScope.of(context);
     final r = await s.repo.myListings();
-    await s.loadContacts();
+    await s.loadAccount();
     if (mounted) {
       setState(() {
         _mine = r;
@@ -92,7 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      '${u.role == UserRole.agency ? 'Agence' : 'Étudiant'} · ${u.phone}',
+                      '${switch (u.role) {
+                        UserRole.agency => 'Agence',
+                        UserRole.admin => 'Administrateur',
+                        _ => 'Étudiant',
+                      }} · ${u.phone}',
                       style: const TextStyle(color: Colors.white70),
                     ),
                     trailing: IconButton(
@@ -162,6 +166,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
+                if (s.payments.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    'Mes paiements',
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  for (final n in s.payments)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Card(
+                        child: ListTile(
+                          leading: Icon(
+                            switch (n.status) {
+                              PaymentStatus.pending =>
+                                Icons.hourglass_top_rounded,
+                              PaymentStatus.approved => Icons.check_circle,
+                              PaymentStatus.rejected => Icons.cancel,
+                            },
+                            color: switch (n.status) {
+                              PaymentStatus.pending => kAccent,
+                              PaymentStatus.approved => const Color(0xFF16A34A),
+                              PaymentStatus.rejected => const Color(0xFFDC2626),
+                            },
+                          ),
+                          title: Text(
+                            n.listingTitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            '${n.status.label} · ${ago(n.createdAt)}',
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
                 const SizedBox(height: 20),
                 Text(
                   'Contacts débloqués',

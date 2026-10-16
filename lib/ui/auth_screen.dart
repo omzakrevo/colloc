@@ -226,6 +226,14 @@ class _AuthScreenState extends State<AuthScreen> {
                               },
                             ),
                             ActionChip(
+                              label: const Text('Admin'),
+                              onPressed: () {
+                                _email.text = 'admin@demo.com';
+                                _pass.text = 'demo1234';
+                                _submit();
+                              },
+                            ),
+                            ActionChip(
                               label: const Text('Agence'),
                               onPressed: () {
                                 _email.text = 'agence@demo.com';

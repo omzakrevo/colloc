@@ -42,6 +42,7 @@ class _DetailScreenState extends State<DetailScreen> {
     final l = widget.listing;
     final t = Theme.of(context).textTheme;
     final unlocked = s.contactFor(l.id);
+    final pending = s.paymentFor(l.id);
     final mine = s.user?.id == l.ownerId;
     final kc = kindColor(l.kind);
 
@@ -412,12 +413,33 @@ class _DetailScreenState extends State<DetailScreen> {
                       )
                     : unlocked != null
                     ? ContactActions(unlocked)
-                    : GradientButton(
-                        pulse: true,
-                        icon: Icons.lock_open_rounded,
-                        label: 'Contacter · ${fcfa(AppConfig.contactFeeFcfa)}',
-                        gradient: kAccentGradient,
-                        onPressed: _contact,
+                    : pending != null && pending.status == PaymentStatus.pending
+                    ? _PendingBar(onRefresh: s.loadAccount)
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (pending != null &&
+                              pending.status == PaymentStatus.rejected)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                'Votre précédent avis a été refusé. Vérifiez le paiement puis réessayez.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFDC2626),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          GradientButton(
+                            pulse: true,
+                            icon: Icons.lock_open_rounded,
+                            label:
+                                'Contacter · ${fcfa(AppConfig.contactFeeFcfa)}',
+                            gradient: kAccentGradient,
+                            onPressed: _contact,
+                          ),
+                        ],
                       ),
               ),
             ),
@@ -452,6 +474,57 @@ class _InfoChip extends StatelessWidget {
             fontWeight: FontWeight.w700,
             fontSize: 13,
           ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _PendingBar extends StatefulWidget {
+  const _PendingBar({required this.onRefresh});
+  final Future<void> Function() onRefresh;
+  @override
+  State<_PendingBar> createState() => _PendingBarState();
+}
+
+class _PendingBarState extends State<_PendingBar>
+    with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+    decoration: BoxDecoration(
+      color: kAccent.withValues(alpha: .1),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: kAccent.withValues(alpha: .35)),
+    ),
+    child: Row(
+      children: [
+        RotationTransition(
+          turns: _c,
+          child: const Icon(Icons.hourglass_top_rounded, color: kAccent),
+        ),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Text(
+            "Paiement en attente de validation par l'administrateur",
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          ),
+        ),
+        IconButton(
+          tooltip: 'Actualiser',
+          onPressed: widget.onRefresh,
+          icon: const Icon(Icons.refresh_rounded),
         ),
       ],
     ),

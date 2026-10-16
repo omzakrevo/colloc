@@ -23,11 +23,17 @@ La version web est une PWA : sur téléphone, « Ajouter à l'écran d'accueil �
 
 1. Créez un projet sur supabase.com ; dans *SQL Editor*, exécutez `supabase/schema.sql`.
 2. *Authentication → Providers → Email* : désactivez « Confirm email » pour une inscription immédiate (ou gardez-le activé).
-3. Fonction de paiement : `supabase functions deploy pay-contact`.
-   - Tests : `supabase secrets set PAYMENT_MODE=sandbox` (débloque sans débiter — **jamais en production**).
-   - Production : brancher votre agrégateur Mobile Money (CinetPay, PayDunya, Wave Business…) à l'endroit marqué `TODO`
-     de `supabase/functions/pay-contact/index.ts`, puis `PAYMENT_MODE=live`. Tant que ce n'est pas fait, la fonction
-     répond 501 et **aucun contact n'est débloqué** (sécurisé par défaut).
+3. **Paiement manuel validé par un administrateur** (pas d'agrégateur pour l'instant) :
+   - Renseignez vos numéros Mobile Money : table `app_settings`, ligne `payment_methods` (JSON : `id`, `label`, `number`, `holder`).
+   - Créez le compte administrateur : inscrivez-vous normalement dans l'app, puis dans le SQL Editor :
+     `update public.profiles set role = 'admin' where id = (select id from auth.users where email = 'vous@exemple.com');`
+     (le rôle admin ne peut pas être obtenu depuis l'app).
+   - Fonctionnement : l'utilisateur envoie 1 000 FCFA à votre numéro, puis émet un **avis de paiement** dans l'app
+     (son numéro payeur + référence). L'onglet **Paiements** de l'admin (badge = nombre d'avis en attente) permet de
+     **Valider** (le numéro de l'annonceur est alors débloqué chez l'utilisateur, qui voit l'état se mettre à jour tout seul)
+     ou de **Refuser** (l'utilisateur peut émettre un nouvel avis).
+   - L'admin n'est pas notifié par e-mail/SMS : il voit les avis en ouvrant l'app. Une notification pourra être ajoutée.
+   - Plus tard, un paiement automatique (CinetPay, PayDunya, Wave Business…) pourra remplacer la validation manuelle.
 4. Notez `Project URL` et la clé publique (anon/publishable).
 
 ## 3. AWS (web)
@@ -79,3 +85,9 @@ Aucune mise à jour de l'app n'est nécessaire. En mode démo, 3 bannières d'ex
 
 Source : `brand/logo.svg` (arrondi) et `brand/logo-square.svg` (plein cadre, iOS/maskable). Les icônes web, Android et iOS
 en sont dérivées ; le logo animé de l'app est `lib/ui/logo.dart` (même géométrie).
+
+## 8. Photos de maisons d'exemple
+
+Le mode démo affiche les photos présentes dans `assets/houses/` (`house1.jpg` … `house8.jpg` : 1-3 façades, 4 maison à cour,
+5 chambre, 6 salon, 7 cuisine, 8 studio). Sans fichier, un visuel coloré est utilisé. Déposez les images (JPG, ~1280 px de large)
+puis poussez sur `main`. Les vraies annonces utilisent les photos envoyées par les publieurs.

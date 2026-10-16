@@ -15,18 +15,22 @@ class AppState extends ChangeNotifier {
   List<Listing> listings = const [];
   List<UnlockedContact> contacts = const [];
   List<Promo> promos = const [];
+  List<PaymentNotice> payments = const [];
+  List<PaymentNotice> adminPayments = const [];
+  List<PaymentMethodInfo> paymentMethods = const [];
   ListingFilter filter = const ListingFilter();
   bool loading = true;
   String? error;
   bool updateAvailable = false;
   Timer? _updateTimer;
+  Timer? _pollTimer;
 
   Future<void> start() async {
     user = await repo.currentUser();
     await Future.wait([
       refresh(),
       loadPromos(),
-      if (user != null) loadContacts(),
+      if (user != null) loadAccount(),
     ]);
     _updateTimer = Timer.periodic(
       const Duration(minutes: 5),
@@ -38,6 +42,7 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _updateTimer?.cancel();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
@@ -83,6 +88,40 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Contacts + avis de paiement (+ file d'attente admin). Relance un sondage tant qu'un avis est en attente,
+  /// pour que le numéro apparaisse dès que l'administrateur valide.
+  Future<void> loadAccount() async {
+    try {
+      final r = await Future.wait([repo.unlockedContacts(), repo.myPayments()]);
+      contacts = r[0] as List<UnlockedContact>;
+      payments = r[1] as List<PaymentNotice>;
+      if (user?.isAdmin == true) adminPayments = await repo.adminPayments();
+    } catch (_) {}
+    _pollTimer?.cancel();
+    if (user != null &&
+        (payments.any((p) => p.status == PaymentStatus.pending))) {
+      _pollTimer = Timer(const Duration(seconds: 20), loadAccount);
+    }
+    notifyListeners();
+  }
+
+  Future<void> loadPaymentMethods() async {
+    try {
+      paymentMethods = await repo.paymentMethods();
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  PaymentNotice? paymentFor(String listingId) {
+    for (final p in payments) {
+      if (p.listingId == listingId) return p;
+    }
+    return null;
+  }
+
+  int get pendingAdminCount =>
+      adminPayments.where((p) => p.status == PaymentStatus.pending).length;
+
   UnlockedContact? contactFor(String listingId) {
     for (final c in contacts) {
       if (c.listingId == listingId) return c;
@@ -92,7 +131,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> signIn(String email, String password) async {
     user = await repo.signIn(email: email, password: password);
-    await loadContacts();
+    await loadAccount();
     notifyListeners();
   }
 
@@ -112,7 +151,7 @@ class AppState extends ChangeNotifier {
       role: role,
       agencyName: agencyName,
     );
-    await loadContacts();
+    await loadAccount();
     notifyListeners();
   }
 
@@ -120,6 +159,9 @@ class AppState extends ChangeNotifier {
     await repo.signOut();
     user = null;
     contacts = const [];
+    payments = const [];
+    adminPayments = const [];
+    _pollTimer?.cancel();
     notifyListeners();
   }
 
@@ -128,18 +170,24 @@ class AppState extends ChangeNotifier {
     await refresh();
   }
 
-  Future<UnlockedContact> pay(
+  Future<void> submitPayment(
     String listingId,
     String method,
-    String phone,
+    String payerPhone,
+    String reference,
   ) async {
-    final c = await repo.payAndUnlock(
+    await repo.submitPayment(
       listingId: listingId,
       method: method,
-      payerPhone: phone,
+      payerPhone: payerPhone,
+      reference: reference,
     );
-    await loadContacts();
-    return c;
+    await loadAccount();
+  }
+
+  Future<void> review(String id, {required bool approve}) async {
+    await repo.reviewPayment(id, approve: approve);
+    await loadAccount();
   }
 }
 
